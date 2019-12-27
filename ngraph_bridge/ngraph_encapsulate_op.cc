@@ -69,6 +69,7 @@ int NGraphEncapsulateOp::s_instance_id = 0;
 //---------------------------------------------------------------------------
 NGraphEncapsulateOp::NGraphEncapsulateOp(OpKernelConstruction* ctx)
     : OpKernel(ctx) {
+      cout<<"Constructor NGEncap Start "<<name()<<endl;
   // Set the backend type for the this NGraphEncapsulate Op
   std::string backend_name;
   OP_REQUIRES_OK(ctx, ctx->GetAttr<string>("ngraph_backend", &backend_name));
@@ -102,6 +103,7 @@ NGraphEncapsulateOp::NGraphEncapsulateOp(OpKernelConstruction* ctx)
   } else {
     CreateLegacyExecutor(ctx, be_name);
   }
+  cout<<"Constructor NGEncap End "<<name()<<endl;
 }
 
 //---------------------------------------------------------------------------
@@ -109,6 +111,7 @@ NGraphEncapsulateOp::NGraphEncapsulateOp(OpKernelConstruction* ctx)
 //---------------------------------------------------------------------------
 void NGraphEncapsulateOp::CreateParallelExecutor(OpKernelConstruction* ctx,
                                                  const string& backend_name) {
+  cout<<"Constructor PArallelExec Start "<<name()<<endl;
   NGRAPH_VLOG(1) << "Create Parallel Executor " << name();
   GraphDef* graph_def;
   unique_ptr<Graph> encap_subgraph(new Graph(OpRegistry::Global()));
@@ -174,6 +177,7 @@ void NGraphEncapsulateOp::CreateParallelExecutor(OpKernelConstruction* ctx,
                           node_def.attr(), &additional_attribute_map));
   // SetConfig will be called for each EncapsulateOp
   BackendManager::SetConfig(backend_name, additional_attribute_map);
+  cout<<"Constructor Parallel Exec End "<<name()<<endl;
 }
 
 //---------------------------------------------------------------------------
@@ -316,6 +320,7 @@ void NGraphEncapsulateOp::CreateLegacyExecutor(OpKernelConstruction* ctx,
 //  ~NGraphEncapsulateOp()
 //---------------------------------------------------------------------------
 NGraphEncapsulateOp::~NGraphEncapsulateOp() {
+  
   std::ostringstream oss;
   oss << "Destroy Encapsulate_" << ng_encap_impl_.GetInstanceId() << ": "
       << name();
@@ -397,6 +402,7 @@ NGraphEncapsulateOp::~NGraphEncapsulateOp() {
 // OpKernel::Compute
 //---------------------------------------------------------------------------
 void NGraphEncapsulateOp::Compute(OpKernelContext* ctx) {
+  cout<<"Compute NGEncap Start "<<name()<<endl;
   ngraph::Event event_compute("NGEncap::Compute::" + name(), name(), "");
 
   if (m_use_parallel_executor) {
@@ -409,12 +415,14 @@ void NGraphEncapsulateOp::Compute(OpKernelContext* ctx) {
 
   event_compute.Stop();
   ngraph::Event::write_trace(event_compute);
+  cout<<"Compute NGEncap End "<<name()<<endl;
 }
 
 //---------------------------------------------------------------------------
 // ComputeUsingParallelExecutor
 //---------------------------------------------------------------------------
 void NGraphEncapsulateOp::ComputeUsingParallelExecutor(OpKernelContext* ctx) {
+  cout<<"Compute ParallelExec Start "<<name()<<endl;
   NGRAPH_VLOG(1) << "Compute using Parallel Executor " << name();
   // TF input tensors
   std::vector<Tensor> tf_input_tensors;
@@ -617,6 +625,7 @@ void NGraphEncapsulateOp::ComputeUsingParallelExecutor(OpKernelContext* ctx) {
   ngraph::Event::write_trace(event_return_tensor);
 
   NGRAPH_VLOG(2) << "COMPUTE: Done " << name();
+  cout<<"Compute ParallelExec End "<<name()<<endl;
 }
 
 //---------------------------------------------------------------------------

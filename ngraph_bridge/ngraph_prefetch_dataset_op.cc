@@ -416,9 +416,12 @@ class NGraphPrefetchDatasetOp::Dataset : public DatasetBase {
             &shared_data);
         if (s.ok()) {
           shared_data->SetBufferDepth(m_buffer_size);
+          cout<<"Prefetch trying to Get  io tensor bundle " <<endl;
 
           auto ng_input_tensor_bundle =
               shared_data->GetNextIOTensorBundleForDeviceTransfer();
+          cout<<"Prefetch Got current io tensor bundle " << ng_input_tensor_bundle.Id <<endl;
+
           auto ng_prefetch_input_indexes_map =
               shared_data->GetPrefetchInputIndexesMap();
           ngraph::Event evt_dev_cp(

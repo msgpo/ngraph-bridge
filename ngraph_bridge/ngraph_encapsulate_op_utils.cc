@@ -107,7 +107,7 @@ Status GetPipelinedIOTensorsReadyForExecution(
 
       shared_data->AddNextIOTensorBundleForDeviceTransfer(
           next_io_tensor_bundle);
-
+      cout<<"Added next io tensor bundle " << next_io_tensor_bundle.Id <<endl;
       ctx->SetStatus(ctx->resource_manager()->Create(
           NGraphPrefetchSharedResouce::CONTAINER_NAME,
           NGraphPrefetchSharedResouce::RESOURCE_NAME, shared_data));
@@ -137,10 +137,15 @@ Status GetPipelinedIOTensorsReadyForExecution(
             ng_pipelined_outputs};
         shared_data->AddNextIOTensorBundleForDeviceTransfer(
             prefetch_io_tensor_bundle);
+        cout<<"Added next io tensor bundle " << prefetch_io_tensor_bundle.Id <<endl;
 
         // Update the input_tensors with the one ready for exdcution
+        cout<<"trying to get current io tensor bundle " <<endl;
+
         auto ng_io_tensor_bundle_ready =
             shared_data->GetNextIOTensorBundleReadyForDeviceExecution();
+        cout<<"Got current io tensor bundle " << ng_io_tensor_bundle_ready.Id <<endl;
+
         current_iter_pipeline_depth = ng_io_tensor_bundle_ready.Id;
         ng_pipelined_inputs = ng_io_tensor_bundle_ready.Inputs;
         ng_pipelined_outputs = ng_io_tensor_bundle_ready.Outputs;
@@ -153,6 +158,7 @@ Status GetPipelinedIOTensorsReadyForExecution(
         skip_tf2ng_copy = true;
         NGRAPH_VLOG(2) << "[PREFETCH] COMPUTE: Using device tensors";
       }
+      cout<<"increment shared data "<<endl;
       shared_data->IncrSkipCount();
     }
   }

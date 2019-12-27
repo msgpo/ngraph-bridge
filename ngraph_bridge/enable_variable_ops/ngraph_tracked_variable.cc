@@ -88,6 +88,7 @@ NGraphVariableOp::NGraphVariableOp(OpKernelConstruction* context)
       just_looking_(false),
       copy_to_tf_(false),
       dtype_(RemoveRefType(context->output_type(0))) {
+  cout<<"Constructor NGVar Start "<<name()<<endl;
   my_instance_id = s_instance_count;
   s_instance_count++;
 
@@ -101,6 +102,7 @@ NGraphVariableOp::NGraphVariableOp(OpKernelConstruction* context)
                  << " ,just looking " << just_looking_ << " ,copy-to-tf "
                  << copy_to_tf_ << " ,Graph ID " << ng_graph_id_
                  << " ,backend_name " << ng_backend_name_;
+  cout<<"Constructor NGVar End "<<name()<<endl;
 }
 
 NGraphVariableOp::~NGraphVariableOp() {
@@ -113,6 +115,7 @@ NGraphVariableOp::~NGraphVariableOp() {
 // (Changes: Renamed from VariableOp, modified to pass TensorShape to NGraphVar
 // constructor.)
 void NGraphVariableOp::Compute(OpKernelContext* ctx) {
+  cout<<"Compute NGVar Start "<<name()<<endl;
   NGRAPH_VLOG(4) << "NGraphVariable:: Compute called for: " << def().name()
                  << " ,just looking " << just_looking_ << " ,copy-to-tf "
                  << copy_to_tf_ << " ,Graph ID " << ng_graph_id_
@@ -252,6 +255,7 @@ void NGraphVariableOp::Compute(OpKernelContext* ctx) {
   var->Unref();
   event_compute.Stop();
   ngraph::Event::write_trace(event_compute);
+  cout<<"Constructor NGVar End "<<name()<<endl;
 }
 
 REGISTER_KERNEL_BUILDER(Name("NGraphVariable").Device(DEVICE_CPU),

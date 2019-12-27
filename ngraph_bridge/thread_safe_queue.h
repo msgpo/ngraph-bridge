@@ -35,6 +35,7 @@ class ThreadSafeQueue {
   T GetNextAvailable() {
     m_mutex.Lock();
     while (m_queue.empty()) {
+      cout<<"wait"<<endl;
       m_cv.Wait(&m_mutex);
     }
 

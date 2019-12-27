@@ -43,6 +43,7 @@ File: tensorflow/core/kernels/data/prefetch_dataset_op.h
 
 #include "ngraph_bridge/prefetch_autotuner.h"
 #include "tensorflow/core/framework/dataset.h"
+using namespace std;
 
 namespace tensorflow {
 namespace data {
@@ -51,9 +52,12 @@ class NGraphPrefetchDatasetOp : public UnaryDatasetOpKernel {
  public:
   explicit NGraphPrefetchDatasetOp(OpKernelConstruction* ctx)
       : UnaryDatasetOpKernel(ctx) {
+    cout<<"Constructor NGraphPrefetchDatasetOp Start "<<name()<<endl;
     if (ctx->HasAttr("slack_period")) {
       OP_REQUIRES_OK(ctx, ctx->GetAttr("slack_period", &slack_period_));
     }
+    cout<<"Constructor NGraphPrefetchDatasetOp End "<<name()<<endl;
+  
   }
 
  protected:
