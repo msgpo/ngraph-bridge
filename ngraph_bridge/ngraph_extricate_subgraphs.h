@@ -25,9 +25,7 @@
 #include "ngraph/ngraph.hpp"
 
 #include "logging/ngraph_log.h"
-#include "ngraph_bridge/ngraph_api.h"
 #include "ngraph_bridge/ngraph_assign_clusters.h"
-#include "ngraph_bridge/ngraph_cluster_manager.h"
 #include "ngraph_bridge/ngraph_mark_for_clustering.h"
 
 namespace tensorflow {
@@ -45,14 +43,6 @@ typedef struct SubgraphExtractionResults {
   // together
   std::map<int, std::string> backend_name_map;
 
-  std::map<std::tuple<int, int>, std::tuple<int, int>> output_remap_map;
-  std::map<std::tuple<int, std::string, int>, string> input_rename_map;
-
-  // A map from cluster indices to a vector of input data types.
-  std::map<int, std::vector<std::tuple<int, int, DataType>>> cluster_input_map;
-
-  // A map from cluster indices to a vector of output data types.
-  std::map<int, std::vector<DataType>> cluster_output_dt_map;
 } SubgraphExtractionResults;
 
 Status ExtricateSubgraph(Graph*, SubgraphExtractionResults&);
