@@ -32,6 +32,120 @@ namespace ngraph_bridge {
 
 namespace testing {
 
+//                abs
+//                 |
+// const(0) ---> add(1) <---const(1)
+// This test check that with analysis_pass the graph is not rewritten, but we
+// get the TF subgraphs.
+TEST(EncapsulateClusters, AnalysisPass) {
+  NGraphClusterManager::EvictAllClusters();
+  Graph g(OpRegistry::Global());
+
+  Tensor t_input_0(DT_FLOAT, TensorShape{2, 3});
+  Tensor t_input_1(DT_INT32, TensorShape{2});
+  t_input_1.flat<int32>().data()[0] = 3;
+  t_input_1.flat<int32>().data()[1] = 2;
+
+  int cluster_idx_0 = NGraphClusterManager::NewCluster();
+
+  Node* node1;
+  ASSERT_OK(NodeBuilder("node1", "Const")
+                .Attr("dtype", DT_FLOAT)
+                .Attr("value", t_input_0)
+                .Attr("_ngraph_marked_for_clustering", true)
+                .Attr("_ngraph_cluster", cluster_idx_0)
+                .Attr("_ngraph_backend", "CPU")
+                .Finalize(&g, &node1));
+
+  int cluster_idx_1 = NGraphClusterManager::NewCluster();
+  Node* node2;
+  ASSERT_OK(NodeBuilder("node2", "Const")
+                .Attr("dtype", DT_FLOAT)
+                .Attr("value", t_input_1)
+                .Attr("_ngraph_marked_for_clustering", true)
+                .Attr("_ngraph_cluster", cluster_idx_1)
+                .Attr("_ngraph_backend", "CPU")
+                .Finalize(&g, &node2));
+
+  Node* node3;
+  ASSERT_OK(NodeBuilder("node3", "Add")
+                .Input(node1, 0)
+                .Input(node2, 0)
+                .Attr("T", DT_FLOAT)
+                .Attr("_ngraph_marked_for_clustering", true)
+                .Attr("_ngraph_cluster", cluster_idx_1)
+                .Attr("_ngraph_backend", "CPU")
+                .Finalize(&g, &node3));
+
+  Node* node4;
+  ASSERT_OK(NodeBuilder("node4", "Abs")
+                .Input(node3, 0)
+                .Attr("T", DT_FLOAT)
+                .Finalize(&g, &node4));
+
+  Node* source = g.source_node();
+  Node* sink = g.sink_node();
+  g.AddEdge(source, Graph::kControlSlot, node1, Graph::kControlSlot);
+  g.AddEdge(source, Graph::kControlSlot, node2, Graph::kControlSlot);
+  g.AddEdge(node4, Graph::kControlSlot, sink, Graph::kControlSlot);
+
+  std::unordered_map<std::string, std::string> config_map;
+  config_map["ngraph_device_id"] = "";
+  FunctionDefLibrary* fdeflib_new = new FunctionDefLibrary();
+  ASSERT_OK(EncapsulateClusters(&g, 0, fdeflib_new, config_map, {0, {}}, true));
+
+  auto subgraph_0 = NGraphClusterManager::GetClusterGraph(0);
+  auto subgraph_1 = NGraphClusterManager::GetClusterGraph(1);
+  auto subgraph_2 = NGraphClusterManager::GetClusterGraph(2);
+
+  int num_encapsulates = 0;
+  int num_tf_nodes = 0;
+  for (auto itr : g.nodes()) {
+    auto node_type = itr->type_string();
+    num_encapsulates += (node_type == "NGraphEncapsulate" ? 1 : 0);
+    num_tf_nodes +=
+        ((node_type == "Add" || node_type == "Const" || node_type == "Abs")
+             ? 1
+             : 0);
+  }
+
+  // Number of encapsulates == number of functions == 0
+  ASSERT_EQ(num_encapsulates, fdeflib_new->function_size());
+  ASSERT_EQ(num_encapsulates, 0);
+
+  // Assert that there are only 2 subgraphs
+  ASSERT_EQ(subgraph_2, nullptr);
+
+  // All the Add/Const/Abs nodes are left in the graph, since it is an analysis
+  // pass
+  ASSERT_EQ(num_tf_nodes, 4);
+  free(fdeflib_new);
+
+  // In analysis pass cluster manager should be populated with the subgraphs
+  // Now analyse subgraph_0 and subgraph_1, which we got from ClusterManager
+  ASSERT_EQ(subgraph_0->node_size(), 2);
+  ASSERT_EQ(subgraph_1->node_size(), 4);
+
+  auto get_node_name_and_types =
+      [](GraphDef* subgraph) -> set<pair<string, string>> {
+    set<pair<string, string>> node_info;
+    for (int i = 0; i < subgraph->node_size(); i++) {
+      node_info.insert({subgraph->node(i).name(), subgraph->node(i).op()});
+    }
+    return node_info;
+  };
+
+  ASSERT_EQ(get_node_name_and_types(subgraph_0),
+            (set<pair<string, string>>{{"ngraph_output_0", "_Retval"},
+                                       {"node1", "Const"}}));
+  ASSERT_EQ(get_node_name_and_types(subgraph_1),
+            (set<pair<string, string>>{{"ngraph_input_0", "_Arg"},
+                                       {"ngraph_output_0", "_Retval"},
+                                       {"node2", "Const"},
+                                       {"node3", "Add"}}));
+}
+
+// const(0) ---> add(0) <---const(0)
 TEST(EncapsulateClusters, PopulateLibrary) {
   NGraphClusterManager::EvictAllClusters();
   Graph g(OpRegistry::Global());
