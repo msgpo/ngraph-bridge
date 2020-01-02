@@ -37,7 +37,6 @@ set(SRC
    ngraph_builder.cc
    ngraph_backend_manager.cc
    ngraph_capture_variables.cc
-   ngraph_extricate_subgraphs.cc
    ngraph_find_replace_prefetchdataset.cc
    ngraph_catalog.cc
    ngraph_cluster_manager.cc

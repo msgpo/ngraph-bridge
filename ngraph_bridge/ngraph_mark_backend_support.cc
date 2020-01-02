@@ -16,9 +16,11 @@
 
 #include "ngraph_bridge/ngraph_mark_backend_support.h"
 
-using namespace std;
 
 namespace tensorflow {
 
-namespace ngraph_bridge {}  // namespace ngraph_bridge
+namespace ngraph_bridge {
+
+
+}  // namespace ngraph_bridge
 }  // namespace tensorflow
