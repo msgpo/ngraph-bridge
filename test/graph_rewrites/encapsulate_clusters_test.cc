@@ -81,7 +81,8 @@ TEST(EncapsulateClusters, PopulateLibrary) {
 
   std::unordered_map<std::string, std::string> config_map;
   config_map["ngraph_device_id"] = "";
-  ASSERT_OK(EncapsulateClusters(&g, 0, fdeflib_new, config_map, {0, {}}));
+  ASSERT_OK(
+      EncapsulateClusters(&g, 0, fdeflib_new, config_map, {0, {}}, false));
 
   int num_encapsulates = 0;
   int num_tf_nodes = 0;
@@ -207,7 +208,7 @@ TEST(EncapsulateClusters, AOT0) {
       }
       auto status =
           EncapsulateClusters(&g, 0, fdeflib_new, {{"ngraph_device_id", ""}},
-                              make_pair(true, hint));
+                              make_pair(true, hint), false);
       if (did_aot[i]) {
         ASSERT_OK(status);
       } else {
@@ -324,7 +325,7 @@ TEST(EncapsulateClusters, AOT1) {
   for (int i = 0; i < num_cases; i++) {
     ASSERT_NOT_OK(
         EncapsulateClusters(&g, 0, fdeflib_new, {{"ngraph_device_id", ""}},
-                            make_pair(true, node_shapes_hints_vect[i])));
+                            make_pair(true, node_shapes_hints_vect[i]), false));
   }
 
   free(fdeflib_new);
@@ -406,7 +407,7 @@ TEST(EncapsulateClusters, AOT2) {
   for (int i = 0; i < num_cases; i++) {
     auto status =
         EncapsulateClusters(&g, 0, fdeflib_new, {{"ngraph_device_id", ""}},
-                            make_pair(true, node_shapes_hints_vect[i]));
+                            make_pair(true, node_shapes_hints_vect[i]), false);
     if (did_aot[i]) {
       ASSERT_OK(status);
     } else {
@@ -516,7 +517,7 @@ TEST(EncapsulateClusters, AOT3) {
   for (int i = 0; i < num_cases; i++) {
     ASSERT_NOT_OK(
         EncapsulateClusters(&g, 0, fdeflib_new, {{"ngraph_device_id", ""}},
-                            make_pair(true, node_shapes_hints_vect[i])));
+                            make_pair(true, node_shapes_hints_vect[i]), false));
   }
 
   free(fdeflib_new);
@@ -589,7 +590,7 @@ TEST(EncapsulateClusters, AOT4) {
   for (int i = 0; i < num_cases; i++) {
     auto encapsulate_status =
         EncapsulateClusters(&g, 0, fdeflib_new, {{"ngraph_device_id", ""}},
-                            make_pair(true, node_shapes_hints_vect[i]));
+                            make_pair(true, node_shapes_hints_vect[i]), false);
     if (did_aot[i]) {
       ASSERT_OK(encapsulate_status);
     } else {
