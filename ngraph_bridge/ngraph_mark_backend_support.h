@@ -27,17 +27,21 @@ namespace tensorflow {
 
 namespace ngraph_bridge {
 
-    // Notes:
-    // We will attempt to run TranslateGraph (TG) and get the initial ng function from the TF subgraph.
-    // If TG is successful: then we call GetBackendSupportInfoForNgfunction, and get information which nodes are supportable by this specific backend.
-    // In the future GetBackendSupportInfoForNgfunction will be replaced by an ngraph API
-    // If TG fails, we will choose the more conservative approach and use the static map TFtoNgraphOpMap.
-    // Reasons TG could fail are: static inputs, unknown input shapes etc. note that with DynamicTranslateGraph, some of these failure modes should go away
+// Notes:
+// We will attempt to run TranslateGraph (TG) and get the initial ng function
+// from the TF subgraph.
+// If TG is successful: then we call GetBackendSupportInfoForNgfunction, and get
+// information which nodes are supportable by this specific backend.
+// In the future GetBackendSupportInfoForNgfunction will be replaced by an
+// ngraph API
+// If TG fails, we will choose the more conservative approach and use the static
+// map TFtoNgraphOpMap.
+// Reasons TG could fail are: static inputs, unknown input shapes etc. note that
+// with DynamicTranslateGraph, some of these failure modes should go away
 
-
-    // Given an ngraph backend, and an ng function, mark nodes as supported or unsupported by that backend
-    std::map<std::string, bool> GetBackendSupportInfoForNgfunction();
-
+// Given an ngraph backend, and an ng function, mark nodes as supported or
+// unsupported by that backend
+std::map<std::string, bool> GetBackendSupportInfoForNgfunction();
 
 }  // namespace ngraph_bridge
 }  // namespace tensorflow
