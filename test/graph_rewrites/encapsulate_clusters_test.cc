@@ -92,7 +92,13 @@ TEST(EncapsulateClusters, AnalysisPass) {
   std::unordered_map<std::string, std::string> config_map;
   config_map["ngraph_device_id"] = "";
   FunctionDefLibrary* fdeflib_new = new FunctionDefLibrary();
+  ASSERT_EQ(g.num_edges(), 7);
+  ASSERT_EQ(g.num_op_nodes(), 4);
+  ASSERT_EQ(g.num_nodes(), 6);
   ASSERT_OK(EncapsulateClusters(&g, 0, fdeflib_new, config_map, {0, {}}, true));
+  ASSERT_EQ(g.num_edges(), 7);  // number of nodes/edges stay same
+  ASSERT_EQ(g.num_op_nodes(), 4);
+  ASSERT_EQ(g.num_nodes(), 6);
 
   auto subgraph_0 = NGraphClusterManager::GetClusterGraph(0);
   auto subgraph_1 = NGraphClusterManager::GetClusterGraph(1);
@@ -126,6 +132,7 @@ TEST(EncapsulateClusters, AnalysisPass) {
   ASSERT_EQ(subgraph_0->node_size(), 2);
   ASSERT_EQ(subgraph_1->node_size(), 4);
 
+  // helper function to get nodes and their types from a graphdef
   auto get_node_name_and_types =
       [](GraphDef* subgraph) -> set<pair<string, string>> {
     set<pair<string, string>> node_info;
@@ -195,8 +202,16 @@ TEST(EncapsulateClusters, PopulateLibrary) {
 
   std::unordered_map<std::string, std::string> config_map;
   config_map["ngraph_device_id"] = "";
+
+  ASSERT_EQ(g.num_edges(), 6);
+  ASSERT_EQ(g.num_op_nodes(), 3);
+  ASSERT_EQ(g.num_nodes(), 5);
   ASSERT_OK(
       EncapsulateClusters(&g, 0, fdeflib_new, config_map, {0, {}}, false));
+
+  ASSERT_EQ(g.num_edges(), 3);
+  ASSERT_EQ(g.num_op_nodes(), 1);
+  ASSERT_EQ(g.num_nodes(), 3);
 
   int num_encapsulates = 0;
   int num_tf_nodes = 0;
