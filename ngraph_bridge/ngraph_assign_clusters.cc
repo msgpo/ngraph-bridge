@@ -818,9 +818,7 @@ Status GetNodeCluster(const Node* node, int* cluster) {
 }
 
 void ResetAssignClusters(Graph* graph) {
-  for (auto node : graph->nodes()){
-    node->ClearAttr("_ngraph_cluster");
-  }
+  ClearAttribute(graph, {"_ngraph_cluster"});
 }
 
 }  // namespace ngraph_bridge

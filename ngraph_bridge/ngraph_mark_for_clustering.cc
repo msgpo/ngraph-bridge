@@ -1248,7 +1248,6 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
 
     // TODO: call translate graph etc and call "graph level is_supported"
 
-
     // TODO: delete unsupported node from nodes_marked_for_clustering
 
     // TODO: call "mark" function here
@@ -1262,11 +1261,10 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       break;
     } else {
       NGraphClusterManager::EvictAllClusters();
-      ResetMarkForClustering(graph); 
+      ResetMarkForClustering(graph);
       ResetAssignClusters(graph);
     }
   }
-
 
   // TODO: assert that clustermanager is empty? and assert that num nodes and
   // num edges before and after are same (no rewriting has happened)
@@ -1278,14 +1276,8 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
 }
 
 void ResetMarkForClustering(Graph* graph) {
-  for (auto node : graph->nodes()) {
-    if (NodeIsMarkedForClustering(node)) {
-      node->ClearAttr("_ngraph_marked_for_clustering");
-      node->ClearAttr("_ngraph_backend");
-      // Some nodes may not have static inputs, but it is ok to clear an attribute that is not set
-      node->ClearAttr("_ngraph_static_inputs");
-    }
-  }
+  ClearAttribute(graph, {"_ngraph_marked_for_clustering", "_ngraph_backend",
+                         "_ngraph_static_inputs"});
 }
 
 bool NodeIsMarkedForClustering(const Node* node) {
