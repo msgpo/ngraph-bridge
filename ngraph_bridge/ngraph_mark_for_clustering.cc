@@ -894,7 +894,7 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
         }
       }
     }
-    // TODO add tests for this section
+    // TODO add tests for this section. Use the dummy backend to test it
 
     // run till all nodes we suggest are indeed supportable.
     if (!changed) {
