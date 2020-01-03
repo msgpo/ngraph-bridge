@@ -19,7 +19,11 @@
 #include "ngraph/runtime/backend.hpp"
 #include "ngraph/runtime/backend_manager.hpp"
 #include "ngraph_bridge/ngraph_api.h"
+#include "ngraph_bridge/ngraph_assign_clusters.h"
 #include "ngraph_bridge/ngraph_backend_manager.h"
+#include "ngraph_bridge/ngraph_cluster_manager.h"
+#include "ngraph_bridge/ngraph_deassign_clusters.h"
+#include "ngraph_bridge/ngraph_encapsulate_clusters.h"
 #include "ngraph_bridge/ngraph_mark_for_clustering.h"
 #include "ngraph_bridge/ngraph_utils.h"
 #include "ngraph_bridge/ngraph_version_utils.h"
@@ -1170,7 +1174,7 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
     // Set the _ngraph_marked_for_clustering attribute if all constraints
     // are satisfied
     if (mark_for_clustering) {
-      NGRAPH_VLOG(4) << "Accepting: " << node->name() << "["
+      NGRAPH_VLOG(4) << "Initially Accepting: " << node->name() << "["
                      << node->type_string() << "]";
       nodes_marked_for_clustering.push_back(node);
     } else {
@@ -1182,6 +1186,7 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
   // Release backend created to query is_supported
   BackendManager::ReleaseBackend(ng_backend_type);
 
+  // TODO: take care of logs
   if (config::IsLoggingPlacement()) {
     std::cout << "\n=============New sub-graph logs=============\n";
     // print summary for nodes failed to be marked
@@ -1196,20 +1201,91 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
     std::cout << "\n";
   }
 
-  for (auto node : nodes_marked_for_clustering) {
-    // TODO(amprocte): move attr name to a constant
-    node->AddAttr("_ngraph_marked_for_clustering", true);
-    SetNodeBackend(node, current_backend);
-    auto it = set_attributes_map.find(node->type_string());
-    if (it != set_attributes_map.end()) {
-      TF_RETURN_IF_ERROR(it->second(node));
+  // At this point we have the "initial" graph that could be supported by a
+  // generic backend such as CPU
+  // We want to query the existing backend as well to find if it can support all
+  // the nodes that think we can support
+
+  // TODO: this is slightly fragile. We have to exactly replicate the steps that
+  // rewrite_pass is doing here.
+  // Maybe this should be packaged into a function that we can call here, and in
+  // rewrite_pass
+
+  // Get backend + its configurations
+  // to be attached to the nodes
+  // Precedence Order: Env Variable > BackendManager
+  std::unordered_map<std::string, std::string> config_map;
+  string backend_creation_string;
+  // GetCurrentlySetBackendName could return GPU:0 (not just GPU)
+  TF_RETURN_IF_ERROR(
+      BackendManager::GetCurrentlySetBackendName(&backend_creation_string));
+
+  // splits into {"ngraph_backend", "ngraph_device_id"}
+  config_map = BackendManager::GetBackendAttributeValues(
+      backend_creation_string);  // SplitBackendConfig
+  config_map.erase("ngraph_backend");
+
+  while (true) {
+    for (auto node : nodes_marked_for_clustering) {
+      // TODO(amprocte): move attr name to a constant
+      // Set marking, backend and static input nodes
+      node->AddAttr("_ngraph_marked_for_clustering", true);
+      SetNodeBackend(node, current_backend);
+      auto it = set_attributes_map.find(node->type_string());
+      if (it != set_attributes_map.end()) {
+        TF_RETURN_IF_ERROR(it->second(node));
+      }
+    }
+
+    AssignClusters(graph);
+    DeassignClusters(graph);
+    FunctionDefLibrary* fdeflib_new = new FunctionDefLibrary();
+    // Call EncapsulateClusters in analysis pass mode
+    // Calling with graph_id=0, since it will not matter for an analysis pass
+    TF_RETURN_IF_ERROR(
+        EncapsulateClusters(graph, 0, fdeflib_new, config_map, {0, {}}, true));
+    delete (fdeflib_new);
+
+    // TODO: call translate graph etc and call "graph level is_supported"
+
+
+    // TODO: delete unsupported node from nodes_marked_for_clustering
+
+    // TODO: call "mark" function here
+
+    // run till all nodes we suggest are indeed supportable.
+    // May need changes in AssignClusters to blacklist some nodes that were
+    // detected as unsupportable
+    bool changed = false;  // TODO fix
+
+    if (!changed) {
+      break;
+    } else {
+      NGraphClusterManager::EvictAllClusters();
+      ResetMarkForClustering(graph); 
+      ResetAssignClusters(graph);
     }
   }
+
+
+  // TODO: assert that clustermanager is empty? and assert that num nodes and
+  // num edges before and after are same (no rewriting has happened)
 
   for (auto node : variable_type_nodes) {
     SetNodeBackend(node, current_backend);
   }
   return Status::OK();
+}
+
+void ResetMarkForClustering(Graph* graph) {
+  for (auto node : graph->nodes()) {
+    if (NodeIsMarkedForClustering(node)) {
+      node->ClearAttr("_ngraph_marked_for_clustering");
+      node->ClearAttr("_ngraph_backend");
+      // Some nodes may not have static inputs, but it is ok to clear an attribute that is not set
+      node->ClearAttr("_ngraph_static_inputs");
+    }
+  }
 }
 
 bool NodeIsMarkedForClustering(const Node* node) {

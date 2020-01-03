@@ -28,6 +28,10 @@ namespace ngraph_bridge {
 
 Status MarkForClustering(Graph* graph, std::set<string> skip_these_nodes,
                          const string& current_backend);
+// TODO add an utility that accepts a graph and an attribute and clears all nodes of that attribute
+// rewrite ResetMarkForClustering and ResetAsisgn in terms of that utility
+// remove marking, backend and static input nodes attributes
+void ResetMarkForClustering(Graph* graph);
 Status IsSupportedByBackend(
     const Node* node, const ngraph::runtime::Backend* op_backend,
     std::map<std::string, std::set<std::shared_ptr<ngraph::Node>>>&
