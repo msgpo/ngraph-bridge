@@ -22,6 +22,10 @@
 #include <string>
 
 #include "ngraph/ngraph.hpp"
+#include "tensorflow/core/graph/graph.h"
+
+namespace ng = ngraph;
+using namespace std;
 
 namespace tensorflow {
 
@@ -41,7 +45,22 @@ namespace ngraph_bridge {
 
 // Given an ngraph backend, and an ng function, mark nodes as supported or
 // unsupported by that backend
-std::map<std::string, bool> GetBackendSupportInfoForNgfunction();
+// TODO replace by appropriate ngcore API when available.
+std::map<std::string, bool> GetBackendSupportInfoForNgfunction(
+    const ng::runtime::Backend* op_backend,
+    const shared_ptr<ng::Function>& ng_function);
+
+std::map<std::string, bool> GetBackendSupportInfoForTFSubgraph(
+    const ng::runtime::Backend*, GraphDef*);
+
+Status IsSupportedByBackend(const Node* node,
+                            const ng::runtime::Backend* op_backend,
+                            bool& is_supported);
+Status IsSupportedByBackend(
+    const Node* node, const ng::runtime::Backend* op_backend,
+    std::map<std::string, std::set<std::shared_ptr<ngraph::Node>>>&
+        TFtoNgraphOpMap,
+    bool& is_supported);
 
 }  // namespace ngraph_bridge
 }  // namespace tensorflow
