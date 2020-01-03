@@ -23,21 +23,41 @@ namespace tensorflow {
 
 namespace ngraph_bridge {
 
-std::map<std::string, bool> GetBackendSupportInfoForTFSubgraph(
-    const ng::runtime::Backend* op_backend, GraphDef* g) {
-  std::map<std::string, bool> result_map;
+Status GetBackendSupportInfoForTFSubgraph(
+    const ng::runtime::Backend* op_backend, GraphDef* g,
+    std::map<std::string, bool>& result_map) {
+  result_map.clear();
   // TODO: fill this function
   // Call translate graph. Then call GetBackendSupportInfoForNgfunction
 
-  return result_map;
+  // TODO, populate possible_to_translate correctly later
+  bool possible_to_translate = false;
+  if (possible_to_translate) {
+    // call translategraph etc and GetBackendSupportInfoForNgfunction
+    // TODO
+    return errors::Internal("Unimplemented: Call TranslateGraph");
+  } else {
+    unique_ptr<Graph> graph_ptr(new Graph(OpRegistry::Global()));
+    GraphConstructorOptions opts;
+    opts.allow_internal_ops = true;
+    TF_RETURN_IF_ERROR(ConvertGraphDefToGraph(opts, *g, graph_ptr.get()));
+    bool supported_op;
+    for (auto node : graph_ptr->nodes()) {
+      TF_RETURN_IF_ERROR(IsSupportedByBackend(node, op_backend, supported_op));
+      result_map.insert({node->name(), supported_op});
+    }
+  }
+  return Status::OK();
 }
 
-std::map<std::string, bool> GetBackendSupportInfoForNgfunction(
+Status GetBackendSupportInfoForNgfunction(
     const ng::runtime::Backend* op_backend,
-    const shared_ptr<ng::Function>& ng_function) {
-  std::map<std::string, bool> result_map;
+    const shared_ptr<ng::Function>& ng_function,
+    std::map<std::string, bool>& result_map) {
+  result_map.clear();
   // TODO: fill this function
-  return result_map;
+
+  return Status::OK();
 }
 
 Status IsSupportedByBackend(

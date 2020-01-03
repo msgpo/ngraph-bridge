@@ -23,6 +23,7 @@
 
 #include "ngraph/ngraph.hpp"
 #include "tensorflow/core/graph/graph.h"
+#include "tensorflow/core/graph/graph_constructor.h"
 
 namespace ng = ngraph;
 using namespace std;
@@ -46,12 +47,13 @@ namespace ngraph_bridge {
 // Given an ngraph backend, and an ng function, mark nodes as supported or
 // unsupported by that backend
 // TODO replace by appropriate ngcore API when available.
-std::map<std::string, bool> GetBackendSupportInfoForNgfunction(
+Status GetBackendSupportInfoForNgfunction(
     const ng::runtime::Backend* op_backend,
-    const shared_ptr<ng::Function>& ng_function);
+    const shared_ptr<ng::Function>& ng_function, std::map<std::string, bool>&);
 
-std::map<std::string, bool> GetBackendSupportInfoForTFSubgraph(
-    const ng::runtime::Backend*, GraphDef*);
+Status GetBackendSupportInfoForTFSubgraph(const ng::runtime::Backend*,
+                                          GraphDef*,
+                                          std::map<std::string, bool>&);
 
 Status IsSupportedByBackend(const Node* node,
                             const ng::runtime::Backend* op_backend,

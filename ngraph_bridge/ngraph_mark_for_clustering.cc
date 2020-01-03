@@ -870,8 +870,8 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
         break;
       } else {
         // TODO: in AOT case pass shape hints in
-        tf_node_support_map =
-            GetBackendSupportInfoForTFSubgraph(op_backend, gdef);
+        TF_RETURN_IF_ERROR(GetBackendSupportInfoForTFSubgraph(
+            op_backend, gdef, tf_node_support_map));
         graphdef_idx++;
       }
 
