@@ -866,8 +866,8 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       }
     }
 
-    AssignClusters(graph);
-    DeassignClusters(graph);
+    TF_RETURN_IF_ERROR(AssignClusters(graph));
+    TF_RETURN_IF_ERROR(DeassignClusters(graph));
     FunctionDefLibrary* fdeflib_new = new FunctionDefLibrary();
     // Call EncapsulateClusters in analysis pass mode
     // Calling with graph_id=0, since it will not matter for an analysis pass
