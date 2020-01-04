@@ -43,8 +43,10 @@ Status GetBackendSupportInfoForTFSubgraph(
     TF_RETURN_IF_ERROR(ConvertGraphDefToGraph(opts, *g, graph_ptr.get()));
     bool supported_op;
     for (auto node : graph_ptr->nodes()) {
+        if (NodeIsMarkedForClustering(node)){
       TF_RETURN_IF_ERROR(IsSupportedByBackend(node, op_backend, supported_op));
       result_map.insert({node->name(), supported_op});
+        }
     }
   }
   return Status::OK();

@@ -25,6 +25,8 @@
 #include "tensorflow/core/graph/graph.h"
 #include "tensorflow/core/graph/graph_constructor.h"
 
+#include "ngraph_bridge/ngraph_mark_for_clustering.h"
+
 namespace ng = ngraph;
 using namespace std;
 
