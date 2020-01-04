@@ -238,6 +238,7 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       confirmation_function_map["All"] = SimpleConfirmationFunction();
       confirmation_function_map["ArgMax"] = SimpleConfirmationFunction();
       confirmation_function_map["ArgMin"] = SimpleConfirmationFunction();
+      confirmation_function_map["Atan2"] = SimpleConfirmationFunction();
       confirmation_function_map["AvgPool"] = SimpleConfirmationFunction();
       confirmation_function_map["AvgPoolGrad"] = SimpleConfirmationFunction();
       confirmation_function_map["BatchMatMul"] = SimpleConfirmationFunction();
@@ -253,7 +254,9 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       confirmation_function_map["Conv2DBackpropInput"] =
           SimpleConfirmationFunction();
       confirmation_function_map["Conv3D"] = SimpleConfirmationFunction();
+      confirmation_function_map["CropAndResize"] = SimpleConfirmationFunction();
       confirmation_function_map["Cos"] = SimpleConfirmationFunction();
+      confirmation_function_map["Cumsum"] = SimpleConfirmationFunction();
       confirmation_function_map["DepthwiseConv2dNative"] =
           SimpleConfirmationFunction();
       confirmation_function_map["DepthToSpace"] = [](Node* n, bool* result) {
@@ -377,8 +380,11 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       confirmation_function_map["Relu6"] = SimpleConfirmationFunction();
       confirmation_function_map["ReluGrad"] = SimpleConfirmationFunction();
       confirmation_function_map["Reshape"] = SimpleConfirmationFunction();
+      confirmation_function_map["ResizeBilinear"] =
+          SimpleConfirmationFunction();
       confirmation_function_map["Rsqrt"] = SimpleConfirmationFunction();
       confirmation_function_map["RsqrtGrad"] = SimpleConfirmationFunction();
+      confirmation_function_map["ScatterNd"] = SimpleConfirmationFunction();
       confirmation_function_map["Select"] = SimpleConfirmationFunction();
       confirmation_function_map["Shape"] = SimpleConfirmationFunction();
       confirmation_function_map["Sigmoid"] = SimpleConfirmationFunction();
@@ -438,6 +444,7 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       type_constraint_map["ArgMax"]["Tidx"] = NGraphIndexDTypes();
       type_constraint_map["ArgMin"]["T"] = NGraphNumericDTypes();
       type_constraint_map["ArgMin"]["Tidx"] = NGraphIndexDTypes();
+      type_constraint_map["Atan2"]["T"] = NGraphRealDTypes();
       type_constraint_map["AvgPool"]["T"] = NGraphNumericDTypes();
       type_constraint_map["AvgPoolGrad"]["T"] = NGraphNumericDTypes();
       type_constraint_map["BatchMatMul"]["T"] = NGraphNumericDTypes();
@@ -452,7 +459,10 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       type_constraint_map["Conv2D"]["T"] = NGraphNumericDTypes();
       type_constraint_map["Conv2DBackpropInput"]["T"] = NGraphNumericDTypes();
       type_constraint_map["Conv3D"]["T"] = NGraphNumericDTypes();
+      type_constraint_map["CropAndResize"]["T"] = NGraphNumericDTypes();
       type_constraint_map["Cos"]["T"] = NGraphRealDTypes();
+      type_constraint_map["Cumsum"]["T"] = NGraphNumericDTypes();
+      type_constraint_map["Cumsum"]["Tidx"] = NGraphIndexDTypes();
       type_constraint_map["DepthToSpace"]["T"] = NGraphDTypes();
       type_constraint_map["DepthwiseConv2dNative"]["T"] = NGraphNumericDTypes();
       type_constraint_map["Dequantize"]["T"] = NGraphSupportedQuantizedDTypes();
@@ -569,8 +579,11 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       type_constraint_map["ReluGrad"]["T"] = NGraphNumericDTypes();
       type_constraint_map["Reshape"]["T"] = NGraphDTypes();
       type_constraint_map["Reshape"]["Tshape"] = NGraphIndexDTypes();
+      type_constraint_map["ResizeBilinear"]["T"] = NGraphNumericDTypes();
       type_constraint_map["Rsqrt"]["T"] = NGraphDTypes();
       type_constraint_map["RsqrtGrad"]["T"] = NGraphRealDTypes();
+      type_constraint_map["ScatterNd"]["T"] = NGraphDTypes();
+      type_constraint_map["ScatterNd"]["Tindices"] = NGraphIndexDTypes();
       type_constraint_map["Select"]["T"] = NGraphDTypes();
       type_constraint_map["Shape"]["T"] = NGraphDTypes();
       type_constraint_map["Shape"]["out_type"] = NGraphIndexDTypes();
@@ -665,6 +678,8 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       };
       set_attributes_map["RandomUniform"] = SetStaticInputs({0});
       set_attributes_map["Reshape"] = SetStaticInputs({1});
+      set_attributes_map["ResizeBilinear"] = SetStaticInputs({1});
+      set_attributes_map["ScatterNd"] = SetStaticInputs({2});
       set_attributes_map["Slice"] = SetStaticInputs({1, 2});
       set_attributes_map["Split"] = SetStaticInputs({0});
       set_attributes_map["SplitV"] = SetStaticInputs({1, 2});
