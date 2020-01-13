@@ -291,7 +291,8 @@ Status TFDataTypeToNGraphElementType(DataType tf_dt,
 // Converts a TensorFlow TensorShape to an nGraph Shape. Requires that none of
 // the dimension lengths in tf_shape are negative.
 Status TFTensorShapeToNGraphShape(const TensorShape& tf_shape,
-                                  ngraph::Shape* ng_shape);
+                                  ngraph::Shape* ng_shape,
+                                  ngraph::PartialShape* ng_partial_shape = nullptr);
 
 // Returns an ArraySlice containing all TensorFlow dtypes supported by the
 // nGraph bridge.

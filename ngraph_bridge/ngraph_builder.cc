@@ -5160,10 +5160,21 @@ const static std::map<
   }
 };
 
+const static std::map<
+    const string,
+    const function<Status(const Node*, const std::vector<const Tensor*>&,
+                          Builder::OpMap&)>>
+    DYN_TRANSLATE_OP_MAP {
+  {"Mul", TranslateBinaryOp<ngraph::op::Multiply>},
+  {"Reshape", TranslateReshapeOp},
+  {"Shape", TranslateShapeOp},
+};
+
 Status Builder::TranslateGraph(
     const std::vector<TensorShape>& inputs,
     const std::vector<const Tensor*>& static_input_map,
-    const Graph* input_graph, shared_ptr<ng::Function>& ng_function) {
+    const Graph* input_graph, shared_ptr<ng::Function>& ng_function,
+    bool dynamic=false) {
   //
   // We will visit ops in topological order.
   //
@@ -5230,6 +5241,7 @@ Status Builder::TranslateGraph(
     ng::element::Type ng_et;
     TF_RETURN_IF_ERROR(TFDataTypeToNGraphElementType(dtype, &ng_et));
 
+    ng::PartialShape ng_shape_info;
     ng::Shape ng_shape;
     TF_RETURN_IF_ERROR(TFTensorShapeToNGraphShape(inputs[index], &ng_shape));
 
@@ -5252,7 +5264,11 @@ Status Builder::TranslateGraph(
                           Builder::OpMap&)>* op_fun;
 
     try {
-      op_fun = &(TRANSLATE_OP_MAP.at(op->type_string()));
+      if( DYN_TRANSLATE_OP_MAP.count(op->type_string()) > 0 ) {
+        op_fun = &(DYN_TRANSLATE_OP_MAP.at(op->type_string()));
+      } else {
+        op_fun = &(TRANSLATE_OP_MAP.at(op->type_string()));
+      }
     } catch (const std::out_of_range&) {
       // -----------------------------
       // Catch-all for unsupported ops

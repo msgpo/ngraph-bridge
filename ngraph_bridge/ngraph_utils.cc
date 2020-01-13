@@ -281,7 +281,17 @@ Status TFDataTypeToNGraphElementType(DataType tf_dt,
 }
 
 Status TFTensorShapeToNGraphShape(const TensorShape& tf_shape,
-                                  ngraph::Shape* ng_shape) {
+                                  ngraph::Shape* ng_shape,
+                                  ngraph::PartialShape* ng_partial_shape = nullptr) {
+
+  if(tf_shape.unknown_rank() || !tf_shape.IsFullyDefined() || tf_shape.dims()==-1) {
+    if(!ng_partial_shape) {
+      return errors::InvalidArgument(
+          "TensorFlow shape is partial, but null param passed");
+    }
+    return TFTensorShapeToNGraphPartialShape(tf_shape, ng_partial_shape);
+  }
+
   for (int i = 0; i < tf_shape.dims(); i++) {
     if (tf_shape.dim_size(i) < 0) {
       return errors::InvalidArgument(
@@ -290,6 +300,24 @@ Status TFTensorShapeToNGraphShape(const TensorShape& tf_shape,
   }
 
   *ng_shape = ngraph::Shape(tf_shape.dims());
+  for (int i = 0; i < tf_shape.dims(); i++) {
+    (*ng_shape)[i] = tf_shape.dim_size(i);
+  }
+
+  return Status::OK();
+}
+
+static Status TFTensorShapeToNGraphPartialShape(const TensorShape& tf_shape,
+                                  ngraph::PartialShape* ng_partial_shape) {
+  // TODO: Bani
+  for (int i = 0; i < tf_shape.dims(); i++) {
+    if (tf_shape.dim_size(i) < 0) {
+      return errors::InvalidArgument(
+          "TensorFlow shape has a negative dimension size");
+    }
+  }
+
+  *ng_shape = ngraph::PartialShape(tf_shape.dims());
   for (int i = 0; i < tf_shape.dims(); i++) {
     (*ng_shape)[i] = tf_shape.dim_size(i);
   }
