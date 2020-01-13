@@ -233,7 +233,7 @@ class NGraphEncapsulationPass : public NGraphRewritePass {
     auto status = EncapsulateClusters(options.graph->get(), idx, fdeflib_new,
                                       config_map, {0, {}});
     if (status != Status::OK()) {
-      delete (fdeflib_new);
+      delete fdeflib_new;
       return status;
     }
     // TODO: not using fdeflib_new in this path. Only grappler path uses it

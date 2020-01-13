@@ -264,7 +264,7 @@ Status NgraphOptimizer::Optimize(tensorflow::grappler::Cluster* cluster,
   auto status =
       EncapsulateClusters(&graph, idx, fdeflib_new, config_map, aot_info);
   if (status != Status::OK()) {
-    delete (fdeflib_new);
+    delete fdeflib_new;
     return status;
   }
   if (DumpEncapsulatedGraphs()) {
