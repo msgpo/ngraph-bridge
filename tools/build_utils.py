@@ -56,7 +56,13 @@ def command_executor(cmd, verbose=False, msg=None, stdout=None, stderr=None):
     if verbose:
         tag = 'Running COMMAND: ' if msg is None else msg
         print(tag + cmd)
-    if (call(shlex.split(cmd), stdout=stdout, stderr=stderr) != 0):
+    success = True
+    try:
+        retcode = call(shlex.split(cmd), stdout=stdout, stderr=stderr)
+        success = (retcode != 0)
+    except:
+        success = False
+    if (not success):
         raise Exception("Error running command: " + cmd)
 
 
