@@ -59,7 +59,7 @@ def command_executor(cmd, verbose=False, msg=None, stdout=None, stderr=None):
     success = True
     try:
         retcode = call(shlex.split(cmd), stdout=stdout, stderr=stderr)
-        success = (retcode != 0)
+        success = (retcode == 0)
     except:
         success = False
     if (not success):
