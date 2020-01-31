@@ -23,6 +23,7 @@ namespace ngraph_bridge {
 namespace config {
 
 static bool _is_enabled = true;
+static bool _is_dynamic = false;
 static bool _is_logging_placement = false;
 static std::set<std::string> disabled_op_types{};
 
@@ -76,6 +77,11 @@ extern const char* ngraph_get_disabled_ops() {
 
 // note that TensorFlow always uses camel case for the C++ API, but not for
 // Python
+void UseDynamic() { _is_dynamic = true; }
+void UseStatic() { _is_dynamic = false; }
+bool IsDynamic() { return _is_dynamic; }
+
+
 void Enable() { _is_enabled = true; }
 void Disable() { _is_enabled = false; }
 bool IsEnabled() { return _is_enabled; }

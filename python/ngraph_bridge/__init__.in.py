@@ -48,6 +48,7 @@ __all__ = [
     'is_logging_placement', '__version__', 'cxx11_abi_flag'
     'is_grappler_enabled', 'update_config', 'are_variables_enabled',
     'set_disabled_ops', 'get_disabled_ops', 'is_distributed_enabled',
+    'use_dynamic', 'use_static', 'is_dynamic'
 ]
 
 ext = 'dylib' if system() == 'Darwin' else 'so'
@@ -154,6 +155,18 @@ if ngraph_classic_loaded:
 
     def is_enabled():
         return ngraph_bridge_lib.ngraph_is_enabled()
+
+
+    def use_dynamic():
+        ngraph_bridge_lib.UseDynamic()
+
+
+    def use_static():
+        ngraph_bridge_lib.UseStatic()
+
+
+    def is_dynamic():
+        return ngraph_bridge_lib.IsDynamic()
 
 
     def backends_len():
