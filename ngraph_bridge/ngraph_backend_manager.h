@@ -30,6 +30,8 @@
 #include "ngraph/ngraph.hpp"
 #include "ngraph/runtime/backend_manager.hpp"
 
+#include "ngraph_bridge/ngraph_api.h"
+
 #include "logging/ngraph_log.h"
 
 using namespace std;
@@ -38,6 +40,14 @@ namespace ng = ngraph;
 namespace tensorflow {
 
 namespace ngraph_bridge {
+
+
+// Forward declaration for friend class
+namespace testing {
+class BackendManagerWithDyn_SetBackend_Test;
+class BackendManagerWithDyn_GetCurrentlySetBackendName_Test;
+class BackendManagerWithDyn_CreateBackend_Test;
+}
 
 struct Backend {
   shared_ptr<ng::runtime::Backend> backend_ptr;
@@ -123,6 +133,14 @@ class BackendManager {
                                          const string& device_id);
 
   ~BackendManager();
+
+// Test class
+  friend class tensorflow::ngraph_bridge::testing::
+      BackendManagerWithDyn_SetBackend_Test;
+  friend class tensorflow::ngraph_bridge::testing::
+      BackendManagerWithDyn_GetCurrentlySetBackendName_Test;
+  friend class tensorflow::ngraph_bridge::testing::
+      BackendManagerWithDyn_CreateBackend_Test;
 
  private:
   static string ng_backend_name_;  // currently set backend name

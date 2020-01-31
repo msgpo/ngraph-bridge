@@ -42,72 +42,123 @@ namespace testing {
 These tests test the Backend Handling by the bridge.
 */
 
+
+class BackendManagerWithDyn : public ::testing::Test {
+ protected:
+};
+
 // Test SetBackendAPI
-TEST(BackendManager, SetBackend) {
-  // If NGRAPH_TF_BACKEND is set, unset it
-  list<string> env_vars{"NGRAPH_TF_BACKEND"};
-  const unordered_map<string, string>& env_map = StoreEnv(env_vars);
+TEST_F(BackendManagerWithDyn, SetBackend) {
+  // With and without dyn set, the backends have the same name
+  // TODO is that right? should we name them X and dyn_X?
+  // Probably not. Dyn and not dyn can/should be kept orthogonal to backend
+  for (auto dyn : {true, false}) {
+    if (dyn) {
+      config::UseDynamic();
+    }
+    // If NGRAPH_TF_BACKEND is set, unset it
+    list<string> env_vars{"NGRAPH_TF_BACKEND"};
+    const unordered_map<string, string>& env_map = StoreEnv(env_vars);
 
-  ASSERT_OK(BackendManager::SetBackendName("CPU"));
-  string cpu_backend;
-  ASSERT_OK(BackendManager::GetCurrentlySetBackendName(&cpu_backend));
+    ASSERT_OK(BackendManager::SetBackendName("CPU"));
+    string cpu_backend;
+    ASSERT_OK(BackendManager::GetCurrentlySetBackendName(&cpu_backend));
 
-  ASSERT_EQ(cpu_backend, "CPU");
+    ASSERT_EQ(cpu_backend, "CPU");
 
-  ASSERT_OK(BackendManager::SetBackendName("INTERPRETER"));
-  string current_backend;
-  ASSERT_OK(BackendManager::GetCurrentlySetBackendName(&current_backend));
+    ASSERT_OK(BackendManager::SetBackendName("INTERPRETER"));
+    string current_backend;
+    ASSERT_OK(BackendManager::GetCurrentlySetBackendName(&current_backend));
 
-  ASSERT_EQ(current_backend, "INTERPRETER");
+    ASSERT_EQ(current_backend, "INTERPRETER");
 
-  ASSERT_NOT_OK(BackendManager::SetBackendName("temp"));
+    ASSERT_NOT_OK(BackendManager::SetBackendName("temp"));
 
-  // Clean Up
-  ASSERT_OK(BackendManager::SetBackendName("CPU"));
-  // If NGRAPH_TF_BACKEND was set, set it back
-  RestoreEnv(env_map);
+    // Clean Up
+    ASSERT_OK(BackendManager::SetBackendName("CPU"));
+
+    // CPU and INTERPRETER
+    ASSERT_EQ(BackendManager::ng_backend_map_.size(), 0);
+    ASSERT_EQ(BackendManager::ref_count_each_backend_.size(), 2);
+    for (auto itr : BackendManager::ref_count_each_backend_) {
+      ASSERT_EQ(itr.second, 0);
+    }
+
+    // If NGRAPH_TF_BACKEND was set, set it back
+    RestoreEnv(env_map);
+    config::UseStatic();
+  }
 }
+
 
 // Test GetCurrentlySetBackendNameAPI
 // Test with env variable set
-TEST(BackendManager, GetCurrentlySetBackendName) {
-  // If NGRAPH_TF_BACKEND is set, unset it
-  list<string> env_vars{"NGRAPH_TF_BACKEND"};
-  const unordered_map<string, string>& env_map = StoreEnv(env_vars);
+TEST_F(BackendManagerWithDyn, GetCurrentlySetBackendName) {
+  for (auto dyn : {true, false}) {
+    if (dyn) {
+      config::UseDynamic();
+    }
+    // If NGRAPH_TF_BACKEND is set, unset it
+    list<string> env_vars{"NGRAPH_TF_BACKEND"};
+    const unordered_map<string, string>& env_map = StoreEnv(env_vars);
 
-  string cpu_backend = "CPU";
-  string intp_backend = "INTERPRETER";
+    string cpu_backend = "CPU";
+    string intp_backend = "INTERPRETER";
 
-  // set backend to interpreter and env variable to CPU
-  // expected CPU
-  ASSERT_OK(BackendManager::SetBackendName(intp_backend));
-  SetBackendUsingEnvVar(cpu_backend);
-  string backend;
-  ASSERT_OK(BackendManager::GetCurrentlySetBackendName(&backend));
-  ASSERT_EQ(cpu_backend, backend);
+    // set backend to interpreter and env variable to CPU
+    // expected CPU
+    ASSERT_OK(BackendManager::SetBackendName(intp_backend));
+    SetBackendUsingEnvVar(cpu_backend);
+    string backend;
+    ASSERT_OK(BackendManager::GetCurrentlySetBackendName(&backend));
+    ASSERT_EQ(cpu_backend, backend);
 
-  // unset env variable
-  // expected interpreter
-  UnsetBackendUsingEnvVar();
-  ASSERT_OK(BackendManager::GetCurrentlySetBackendName(&backend));
-  ASSERT_EQ(intp_backend, backend);
+    // unset env variable
+    // expected interpreter
+    UnsetBackendUsingEnvVar();
+    ASSERT_OK(BackendManager::GetCurrentlySetBackendName(&backend));
+    ASSERT_EQ(intp_backend, backend);
 
-  // set env variable to DUMMY
-  // expected ERROR
-  SetBackendUsingEnvVar("DUMMY");
-  ASSERT_NOT_OK(BackendManager::GetCurrentlySetBackendName(&backend));
+    // set env variable to DUMMY
+    // expected ERROR
+    SetBackendUsingEnvVar("DUMMY");
+    ASSERT_NOT_OK(BackendManager::GetCurrentlySetBackendName(&backend));
 
-  // set env variable to ""
-  // expected ERROR
-  SetBackendUsingEnvVar("");
-  ASSERT_NOT_OK(BackendManager::GetCurrentlySetBackendName(&backend));
+    // set env variable to ""
+    // expected ERROR
+    SetBackendUsingEnvVar("");
+    ASSERT_NOT_OK(BackendManager::GetCurrentlySetBackendName(&backend));
 
-  // Clean up
-  UnsetBackendUsingEnvVar();
-  ASSERT_OK(BackendManager::SetBackendName("CPU"));
-  // restore
-  // If NGRAPH_TF_BACKEND was set, set it back
-  RestoreEnv(env_map);
+    // Clean up
+    UnsetBackendUsingEnvVar();
+    ASSERT_OK(BackendManager::SetBackendName("CPU"));
+
+    ASSERT_EQ(BackendManager::ng_backend_map_.size(), 0);
+    ASSERT_EQ(BackendManager::ref_count_each_backend_.size(), 2);
+    for (auto itr : BackendManager::ref_count_each_backend_) {
+      ASSERT_EQ(itr.second, 0);
+    }
+  
+    // restore
+    // If NGRAPH_TF_BACKEND was set, set it back
+    RestoreEnv(env_map);
+    config::UseStatic();
+  }
+}
+
+
+TEST_F(BackendManagerWithDyn, CreateBackend) {
+  for (auto dyn : {true, false}) {
+    if (dyn) {
+      config::UseDynamic();
+    }
+    ASSERT_OK(BackendManager::CreateBackend("CPU"));
+    ASSERT_EQ(BackendManager::ng_backend_map_.size(), 1);
+    ASSERT_EQ(BackendManager::ng_backend_map_.at("CPU")->backend_ptr->supports_dynamic_tensors(), dyn);
+    BackendManager::ReleaseBackend("CPU");
+    ASSERT_EQ(BackendManager::ng_backend_map_.size(),0);
+    config::UseStatic();
+  }
 }
 
 // Test CanCreateBackend
@@ -141,7 +192,7 @@ TEST(BackendManager, GetSupportedBackendNames) {
 
 // Test Backend Assignment
 // The backend passed to MarkForClustering is attached to the nodes
-TEST(BackendManager, BackendAssignment) {
+TEST(BackendManager1, BackendAssignment) {
   Scope root = Scope::NewRootScope();
   auto A = ops::Const(root.WithOpName("A"), {1.0f, 1.0f});
   auto B = ops::Const(root.WithOpName("B"), {1.0f, 1.0f});

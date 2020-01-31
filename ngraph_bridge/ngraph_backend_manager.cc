@@ -59,7 +59,7 @@ Status BackendManager::CreateBackend(const string& backend_name) {
   if (itr == BackendManager::ng_backend_map_.end()) {
     std::shared_ptr<ng::runtime::Backend> bend_ptr;
     try {
-      bend_ptr = ng::runtime::Backend::create(backend_name);
+      bend_ptr = ng::runtime::Backend::create(backend_name, config::IsDynamic());
     } catch (const std::exception& e) {
       return errors::Internal("Could not create backend of type ", backend_name,
                               ". Got exception: ", e.what());
