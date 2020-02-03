@@ -1268,9 +1268,14 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
     // TODO(amprocte): move attr name to a constant
     node->AddAttr("_ngraph_marked_for_clustering", true);
     SetNodeBackend(node, current_backend);
-    auto it = set_attributes_map.find(node->type_string());
-    if (it != set_attributes_map.end()) {
-      TF_RETURN_IF_ERROR(it->second(node));
+    // In case we are using dynamic, do not set teh "starred" or shape-relavant inputs
+    // In dynamic case, the encapsulates should not split due to starred inputs
+    // TODO: test this
+    if (!config::IsDynamic()) {
+      auto it = set_attributes_map.find(node->type_string());
+      if (it != set_attributes_map.end()) {
+        TF_RETURN_IF_ERROR(it->second(node));
+      }
     }
   }
 
