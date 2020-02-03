@@ -21,6 +21,8 @@
 
 #include "tensorflow/core/framework/graph.pb.h"
 
+#include "ngraph/ngraph.hpp"
+
 namespace tensorflow {
 
 namespace ngraph_bridge {
@@ -31,9 +33,14 @@ class NGraphClusterManager {
   static tensorflow::GraphDef* GetClusterGraph(size_t idx);
   static void EvictAllClusters();
 
+  // public data member
+  // TODO beautify/add accessors etc for this later
+  static std::map<size_t, std::shared_ptr<ngraph::Function>> s_ng_functions;
+
  private:
   static std::vector<tensorflow::GraphDef*> s_cluster_graphs;
   static std::mutex s_cluster_graphs_mutex;
+  
 };
 
 }  // namespace ngraph_bridge

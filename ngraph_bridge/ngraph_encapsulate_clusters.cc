@@ -82,8 +82,41 @@ Status EncapsulateClusters(
   TF_RETURN_IF_ERROR(enc.AnalysisPass());
   NGRAPH_VLOG(3) << "Running RewritePass in EncapsulateClusters";
   TF_RETURN_IF_ERROR(enc.RewritePass(fdeflib, graph_id, device_config));
-  NGRAPH_VLOG(3) << "Performing AOT in EncapsulateClusters";
-  TF_RETURN_IF_ERROR(PerformAOTOnEncapsulates(graph, aot_info));
+  if (config::IsDynamic()) {
+    // TODO replace code in this if with some function call
+    // PerformTranslation or something like that might be called here
+    for (auto n : graph->nodes()) {
+      if (n->type_string() != "NGraphEncapsulate")
+        continue;
+      int cluster_idx;
+      TF_RETURN_IF_ERROR(GetNodeCluster(n, &cluster_idx));
+
+      GraphDef* gdef_for_current_encapsulate = NGraphClusterManager::GetClusterGraph(cluster_idx);
+      Graph graph_for_current_encapsulate(OpRegistry::Global());
+      GraphConstructorOptions opts;
+      opts.allow_internal_ops = true;
+      TF_RETURN_IF_ERROR(ConvertGraphDefToGraph(opts, *gdef_for_current_encapsulate,
+                                              &graph_for_current_encapsulate));
+      std::shared_ptr<ngraph::Function> ng_function;
+      std::vector<TensorShape> input_shapes;
+      for (auto in_node : n->in_nodes()) {
+        if (!in_node->IsSource()) {
+          input_shapes.push_back(n->def().attr().at("shape").shape());
+        }
+      }
+
+      TF_RETURN_IF_ERROR(Builder::TranslateGraph(input_shapes, {},
+                                              &graph_for_current_encapsulate,
+                                              ng_function));
+      if (NGraphClusterManager::s_ng_functions.find(cluster_idx) != NGraphClusterManager::s_ng_functions.end()) {
+        return errors::Internal("Cluster id ", cluster_idx, " found twice");
+      }
+      NGraphClusterManager::s_ng_functions.insert({cluster_idx, ng_function});
+    }
+  } else {
+    NGRAPH_VLOG(3) << "Performing AOT in EncapsulateClusters";
+    TF_RETURN_IF_ERROR(PerformAOTOnEncapsulates(graph, aot_info));
+  }
 
   set<int> newly_created_cluster_ids;
   TF_RETURN_IF_ERROR(enc.GetNewClusterIDs(newly_created_cluster_ids));
@@ -581,8 +614,7 @@ Status Encapsulator::AnalysisPass() {
   for (auto node : graph->op_nodes()) {
     int cluster_idx;
 
-    if (GetNodeAttr(node->attrs(), "_ngraph_cluster", &cluster_idx) !=
-        Status::OK()) {
+    if (GetNodeCluster(node, &cluster_idx) != Status::OK()) {
       continue;
     }
 
@@ -787,8 +819,7 @@ Status Encapsulator::RewritePass(
   for (auto node : graph->op_nodes()) {
     int cluster_idx;
 
-    if (GetNodeAttr(node->attrs(), "_ngraph_cluster", &cluster_idx) !=
-        Status::OK()) {
+    if (GetNodeCluster(node, &cluster_idx) != Status::OK()) {
       continue;
     }
     nodes_to_remove.push_back(node);
