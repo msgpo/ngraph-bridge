@@ -47,6 +47,10 @@ extern bool ngraph_is_logging_placement();
 
 extern void ngraph_set_disabled_ops(const char* op_type_list);
 extern const char* ngraph_get_disabled_ops();
+
+extern void ngraph_use_dynamic();
+extern void ngraph_use_static();
+extern bool ngraph_is_dynamic();
 }
 
 extern void Enable();

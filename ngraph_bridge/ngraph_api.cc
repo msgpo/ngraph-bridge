@@ -32,6 +32,10 @@ void ngraph_enable() { Enable(); }
 void ngraph_disable() { Disable(); }
 bool ngraph_is_enabled() { return IsEnabled(); }
 
+void ngraph_use_dynamic() { UseDynamic(); }
+void ngraph_use_static() { UseStatic(); }
+bool ngraph_is_dynamic() { return IsDynamic(); }
+
 size_t ngraph_backends_len() { return BackendsLen(); }
 
 bool ngraph_list_backends(char** backends, size_t backends_len) {

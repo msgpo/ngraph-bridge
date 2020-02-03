@@ -33,11 +33,20 @@ namespace ngraph_bridge {
 namespace testing {
 
 // Set using C API, get using C API
-TEST(DisableOps, GettingSettingTest) {
+TEST(DisableOps, GettingSettingTest1) {
+  ASSERT_EQ(config::ngraph_is_dynamic(), false);
+  config::ngraph_use_dynamic();
+  ASSERT_EQ(config::ngraph_is_dynamic(), true);
+  config::ngraph_use_static();
+  ASSERT_EQ(config::ngraph_is_dynamic(), false);
+}
+
+// Set using Cpp API, get using Cpp API
+TEST(DisableOps, GettingSettingTest2) {
   ASSERT_EQ(config::IsDynamic(), false);
   config::UseDynamic();
   ASSERT_EQ(config::IsDynamic(), true);
-    config::UseStatic();
+  config::UseStatic();
   ASSERT_EQ(config::IsDynamic(), false);
 }
 

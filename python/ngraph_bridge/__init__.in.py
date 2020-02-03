@@ -158,15 +158,15 @@ if ngraph_classic_loaded:
 
 
     def use_dynamic():
-        ngraph_bridge_lib.UseDynamic()
+        ngraph_bridge_lib.ngraph_use_dynamic()
 
 
     def use_static():
-        ngraph_bridge_lib.UseStatic()
+        ngraph_bridge_lib.ngraph_use_static()
 
 
     def is_dynamic():
-        return ngraph_bridge_lib.IsDynamic()
+        return ngraph_bridge_lib.ngraph_is_dynamic()
 
 
     def backends_len():
