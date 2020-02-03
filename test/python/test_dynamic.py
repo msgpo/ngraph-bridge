@@ -38,4 +38,3 @@ class TestDynamic(NgraphTest):
         assert ngraph_bridge.is_dynamic()
         ngraph_bridge.use_static()
         assert not ngraph_bridge.is_dynamic()
-

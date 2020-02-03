@@ -42,7 +42,6 @@ namespace testing {
 These tests test the Backend Handling by the bridge.
 */
 
-
 class BackendManagerWithDyn : public ::testing::Test {
  protected:
 };
@@ -89,7 +88,6 @@ TEST_F(BackendManagerWithDyn, SetBackend) {
     config::UseStatic();
   }
 }
-
 
 // Test GetCurrentlySetBackendNameAPI
 // Test with env variable set
@@ -138,14 +136,13 @@ TEST_F(BackendManagerWithDyn, GetCurrentlySetBackendName) {
     for (auto itr : BackendManager::ref_count_each_backend_) {
       ASSERT_EQ(itr.second, 0);
     }
-  
+
     // restore
     // If NGRAPH_TF_BACKEND was set, set it back
     RestoreEnv(env_map);
     config::UseStatic();
   }
 }
-
 
 TEST_F(BackendManagerWithDyn, CreateBackend) {
   for (auto dyn : {true, false}) {
@@ -154,9 +151,11 @@ TEST_F(BackendManagerWithDyn, CreateBackend) {
     }
     ASSERT_OK(BackendManager::CreateBackend("CPU"));
     ASSERT_EQ(BackendManager::ng_backend_map_.size(), 1);
-    ASSERT_EQ(BackendManager::ng_backend_map_.at("CPU")->backend_ptr->supports_dynamic_tensors(), dyn);
+    ASSERT_EQ(BackendManager::ng_backend_map_.at("CPU")
+                  ->backend_ptr->supports_dynamic_tensors(),
+              dyn);
     BackendManager::ReleaseBackend("CPU");
-    ASSERT_EQ(BackendManager::ng_backend_map_.size(),0);
+    ASSERT_EQ(BackendManager::ng_backend_map_.size(), 0);
     config::UseStatic();
   }
 }

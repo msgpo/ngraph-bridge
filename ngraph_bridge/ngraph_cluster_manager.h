@@ -40,7 +40,6 @@ class NGraphClusterManager {
  private:
   static std::vector<tensorflow::GraphDef*> s_cluster_graphs;
   static std::mutex s_cluster_graphs_mutex;
-  
 };
 
 }  // namespace ngraph_bridge

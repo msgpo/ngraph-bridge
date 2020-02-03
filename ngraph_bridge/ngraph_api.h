@@ -72,7 +72,6 @@ extern std::set<string> GetDisabledOps();
 extern void SetDisabledOps(std::set<string>);
 extern void SetDisabledOps(string);
 
-
 extern void UseDynamic();
 extern void UseStatic();
 extern bool IsDynamic();

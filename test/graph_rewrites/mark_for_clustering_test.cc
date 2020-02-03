@@ -35,7 +35,7 @@ namespace ngraph_bridge {
 namespace testing {
 
 TEST(MarkForClustering, SimpleTest) {
-  for (auto dyn : {true, false}){
+  for (auto dyn : {true, false}) {
     if (dyn) {
       config::UseDynamic();
     }

@@ -41,7 +41,6 @@ namespace tensorflow {
 
 namespace ngraph_bridge {
 
-
 // Forward declaration for friend class
 namespace testing {
 class BackendManagerWithDyn_SetBackend_Test;
@@ -134,7 +133,7 @@ class BackendManager {
 
   ~BackendManager();
 
-// Test class
+  // Test class
   friend class tensorflow::ngraph_bridge::testing::
       BackendManagerWithDyn_SetBackend_Test;
   friend class tensorflow::ngraph_bridge::testing::

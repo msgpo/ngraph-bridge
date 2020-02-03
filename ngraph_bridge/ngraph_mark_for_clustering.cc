@@ -1224,13 +1224,13 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       // TODO fix this in ng core
       if (!config::IsDynamic()) {
         bool is_supported = false;
-        TF_RETURN_IF_ERROR(IsSupportedByBackend(node, op_backend, TFtoNgraphOpMap,
-                                                is_supported));
+        TF_RETURN_IF_ERROR(IsSupportedByBackend(node, op_backend,
+                                                TFtoNgraphOpMap, is_supported));
 
         if (!is_supported) {
           NGRAPH_VLOG(5) << "TF Op " << node->name() << " of type "
-                        << node->type_string()
-                        << " is not supported by backend: " << ng_backend_type;
+                         << node->type_string()
+                         << " is not supported by backend: " << ng_backend_type;
           break;
         }
       }
@@ -1272,7 +1272,8 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
     // TODO(amprocte): move attr name to a constant
     node->AddAttr("_ngraph_marked_for_clustering", true);
     SetNodeBackend(node, current_backend);
-    // In case we are using dynamic, do not set teh "starred" or shape-relavant inputs
+    // In case we are using dynamic, do not set teh "starred" or shape-relavant
+    // inputs
     // In dynamic case, the encapsulates should not split due to starred inputs
     // TODO: test this
     if (!config::IsDynamic()) {

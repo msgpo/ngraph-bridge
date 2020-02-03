@@ -22,7 +22,7 @@
 #include "ngraph_bridge/ngraph_mark_for_clustering.h"
 #include "test/test_utilities.h"
 
-//using namespace std;
+// using namespace std;
 namespace ng = ngraph;
 using namespace ngraph;
 
@@ -50,75 +50,75 @@ TEST(DisableOps, GettingSettingTest2) {
   ASSERT_EQ(config::IsDynamic(), false);
 }
 
-
 // TODO remove me
-TEST(NGTest, range_subgraph)
-{
-    // Create a graph for f(start,stop,step) = Range(start,stop,step).
-    auto start = make_shared<op::Parameter>(element::i32, Shape{});
-   auto stop = make_shared<op::Parameter>(element::i32, Shape{});
-    auto step = make_shared<op::Parameter>(element::i32, Shape{});
-    auto start_2 = make_shared<op::Parameter>(element::i32, Shape{});
-    PartialShape out_max_shape{15};
-    PartialShape out_max_shape_2{10};
+TEST(NGTest, range_subgraph) {
+  // Create a graph for f(start,stop,step) = Range(start,stop,step).
+  auto start = make_shared<op::Parameter>(element::i32, Shape{});
+  auto stop = make_shared<op::Parameter>(element::i32, Shape{});
+  auto step = make_shared<op::Parameter>(element::i32, Shape{});
+  auto start_2 = make_shared<op::Parameter>(element::i32, Shape{});
+  PartialShape out_max_shape{15};
+  PartialShape out_max_shape_2{10};
 
-    // subgraph
-    auto range = make_shared<op::Range>(start, stop, step);
-    auto negative = make_shared<op::Negative>(range);
-    auto abs = make_shared<op::Abs>(negative);
-    auto sum = make_shared<op::Sum>(abs, AxisSet{0});
-    auto range_2 = make_shared<op::Range>(start_2, sum, step);
-    auto negative_2 = make_shared<op::Negative>(range_2);
+  // subgraph
+  auto range = make_shared<op::Range>(start, stop, step);
+  auto negative = make_shared<op::Negative>(range);
+  auto abs = make_shared<op::Abs>(negative);
+  auto sum = make_shared<op::Sum>(abs, AxisSet{0});
+  auto range_2 = make_shared<op::Range>(start_2, sum, step);
+  auto negative_2 = make_shared<op::Negative>(range_2);
 
-    //range->output(0).set_max_partial_shape(out_max_shape);
-    //range_2->output(0).set_max_partial_shape(out_max_shape_2);
-    auto f =
-        make_shared<Function>(NodeVector{negative_2}, ParameterVector{start, stop, step, start_2});
+  // range->output(0).set_max_partial_shape(out_max_shape);
+  // range_2->output(0).set_max_partial_shape(out_max_shape_2);
+  auto f = make_shared<Function>(NodeVector{negative_2},
+                                 ParameterVector{start, stop, step, start_2});
 
-    auto backend = runtime::Backend::create("CPU", true);
+  auto backend = runtime::Backend::create("CPU", true);
 
-    ASSERT_EQ(backend->executable_can_create_tensors(), false);
+  ASSERT_EQ(backend->executable_can_create_tensors(), false);
 
-    auto backend1 = runtime::Backend::create("CPU", false);
-    ASSERT_EQ(backend1->executable_can_create_tensors(), true);
+  auto backend1 = runtime::Backend::create("CPU", false);
+  ASSERT_EQ(backend1->executable_can_create_tensors(), true);
 
-    // even if backend's executable can create tensors, dyn_wrapped backend can't
+  // even if backend's executable can create tensors, dyn_wrapped backend can't
 
-    auto handle = backend->compile(f);
-    /*pass::Manager passes;
-    passes.register_pass<pass::MinMaxShapePropagation>();
-    passes.run_passes(f);*/
-/*
+  auto handle = backend->compile(f);
+  /*pass::Manager passes;
+  passes.register_pass<pass::MinMaxShapePropagation>();
+  passes.run_passes(f);*/
+  /*
 
-    auto t_start = backend->create_tensor(element::i32, Shape{});
-    //copy_data(t_start, vector<int32_t>{0});
-    auto t_stop = backend->create_tensor(element::i32, Shape{});
-    //copy_data(t_stop, vector<int32_t>{10});
-    auto t_step = backend->create_tensor(element::i32, Shape{});
-    //copy_data(t_step, vector<int32_t>{1});
-    auto t_start_2 = backend->create_tensor(element::i32, Shape{});
-    //copy_data(t_start_2, vector<int32_t>{40});
-    auto result = backend->create_dynamic_tensor(element::i32, PartialShape::dynamic());
+      auto t_start = backend->create_tensor(element::i32, Shape{});
+      //copy_data(t_start, vector<int32_t>{0});
+      auto t_stop = backend->create_tensor(element::i32, Shape{});
+      //copy_data(t_stop, vector<int32_t>{10});
+      auto t_step = backend->create_tensor(element::i32, Shape{});
+      //copy_data(t_step, vector<int32_t>{1});
+      auto t_start_2 = backend->create_tensor(element::i32, Shape{});
+      //copy_data(t_start_2, vector<int32_t>{40});
+      auto result = backend->create_dynamic_tensor(element::i32,
+     PartialShape::dynamic());
 
 
 
-    vector<int32_t> expected_result{-40, -41, -42, -43, -44};
+      vector<int32_t> expected_result{-40, -41, -42, -43, -44};
 
-    //EXPECT_EQ(out_max_shape, range->get_output_shape(0));
-    //EXPECT_EQ(out_max_shape, range->output(0).get_max_partial_shape());
-    //EXPECT_EQ(out_max_shape, negative->get_output_shape(0));
+      //EXPECT_EQ(out_max_shape, range->get_output_shape(0));
+      //EXPECT_EQ(out_max_shape, range->output(0).get_max_partial_shape());
+      //EXPECT_EQ(out_max_shape, negative->get_output_shape(0));
 
-    //EXPECT_EQ(out_max_shape, negative->output(0).get_max_partial_shape());
-    //EXPECT_EQ(out_max_shape, abs->output(0).get_max_partial_shape());
-    //EXPECT_EQ(out_max_shape, sum->output(0).get_max_partial_shape());
-    //EXPECT_EQ(out_max_shape_2, range_2->output(0).get_max_partial_shape());
-    //EXPECT_EQ(out_max_shape_2, negative_2->output(0).get_max_partial_shape());
-    handle->call_with_validate({result}, {t_start, t_stop, t_step, t_start_2});
-    //EXPECT_EQ(PartialShape{5}, result->get_shape());
-    //ASSERT_EQ(expected_result, read_vector<int32_t>(result));
-    */
+      //EXPECT_EQ(out_max_shape, negative->output(0).get_max_partial_shape());
+      //EXPECT_EQ(out_max_shape, abs->output(0).get_max_partial_shape());
+      //EXPECT_EQ(out_max_shape, sum->output(0).get_max_partial_shape());
+      //EXPECT_EQ(out_max_shape_2, range_2->output(0).get_max_partial_shape());
+      //EXPECT_EQ(out_max_shape_2,
+     negative_2->output(0).get_max_partial_shape());
+      handle->call_with_validate({result}, {t_start, t_stop, t_step,
+     t_start_2});
+      //EXPECT_EQ(PartialShape{5}, result->get_shape());
+      //ASSERT_EQ(expected_result, read_vector<int32_t>(result));
+      */
 }
-
 }
 }
 }

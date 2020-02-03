@@ -85,7 +85,6 @@ void UseDynamic() { _is_dynamic = true; }
 void UseStatic() { _is_dynamic = false; }
 bool IsDynamic() { return _is_dynamic; }
 
-
 void Enable() { _is_enabled = true; }
 void Disable() { _is_enabled = false; }
 bool IsEnabled() { return _is_enabled; }
