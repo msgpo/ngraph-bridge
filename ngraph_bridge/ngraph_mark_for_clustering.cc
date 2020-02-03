@@ -1220,15 +1220,19 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
       }
 
       // Check if op is supported by backend
-      bool is_supported = false;
-      TF_RETURN_IF_ERROR(IsSupportedByBackend(node, op_backend, TFtoNgraphOpMap,
-                                              is_supported));
+      // note that for dynamic backends, is_supported returns false always.
+      // TODO fix this in ng core
+      if (!config::IsDynamic()) {
+        bool is_supported = false;
+        TF_RETURN_IF_ERROR(IsSupportedByBackend(node, op_backend, TFtoNgraphOpMap,
+                                                is_supported));
 
-      if (!is_supported) {
-        NGRAPH_VLOG(5) << "TF Op " << node->name() << " of type "
-                       << node->type_string()
-                       << " is not supported by backend: " << ng_backend_type;
-        break;
+        if (!is_supported) {
+          NGRAPH_VLOG(5) << "TF Op " << node->name() << " of type "
+                        << node->type_string()
+                        << " is not supported by backend: " << ng_backend_type;
+          break;
+        }
       }
 
       // if all constraints are met, mark for clustering
