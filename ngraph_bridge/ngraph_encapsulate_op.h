@@ -47,12 +47,16 @@ class NGraphEncapsulateOp : public OpKernel {
                             const string& backend_name);
   void ComputeUsingLegacyExecutor(OpKernelContext* ctx);
   void ComputeUsingParallelExecutor(OpKernelContext* ctx);
+  void ComputeDyn(OpKernelContext* ctx);
 
   static int s_instance_id;
   NGraphEncapsulateImpl ng_encap_impl_;
   bool m_use_parallel_executor = false;
   std::mutex m_compute_lock_;
   unique_ptr<NGraphExecutor> m_parallel_executor;
+
+  // For dynamic, there will be only 1 ng function and 1 ng exec
+  std::shared_ptr<ngraph::runtime::Executable> dyn_ng_exec;
 };
 
 }  // namespace ngraph_bridge

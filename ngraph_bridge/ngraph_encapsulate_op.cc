@@ -407,7 +407,11 @@ void NGraphEncapsulateOp::Compute(OpKernelContext* ctx) {
     ComputeUsingParallelExecutor(ctx);
   } else {
     NGRAPH_VLOG(1) << "NGraphEncapsulateOp::Compute: Using Legacy Executor";
-    ComputeUsingLegacyExecutor(ctx);
+    if (config::IsDynamic()) {
+      ComputeUsingLegacyExecutor(ctx);
+    } else {
+      ComputeDyn(ctx);
+    }
   }
 
   event_compute.Stop();
@@ -620,6 +624,36 @@ void NGraphEncapsulateOp::ComputeUsingParallelExecutor(OpKernelContext* ctx) {
   ngraph::Event::write_trace(event_return_tensor);
 
   NGRAPH_VLOG(2) << "COMPUTE: Done " << name();
+}
+
+
+//---------------------------------------------------------------------------
+//    ComputeDyn
+//---------------------------------------------------------------------------
+void NGraphEncapsulateOp::ComputeDyn(OpKernelContext* ctx) {
+  // Very basic compute function
+  // TODO: integrate later
+  std::lock_guard<std::mutex> lock(m_compute_lock_);
+
+  // TODO populate me
+  /*
+  if (first_run) {
+    int cluster_id = GetNgraphCluster();
+  }
+
+
+
+  std::vector<TensorShape> input_shapes;
+  // TF input tensor
+  std::vector<Tensor> tf_input_tensors;
+
+  for (int i = 0; i < ctx->num_inputs(); i++) {
+    tf_input_tensors.push_back(ctx->input(i));
+  }
+  */
+
+
+
 }
 
 //---------------------------------------------------------------------------

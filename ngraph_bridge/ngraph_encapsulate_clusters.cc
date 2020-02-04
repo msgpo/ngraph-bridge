@@ -107,14 +107,21 @@ Status EncapsulateClusters(
 
       TF_RETURN_IF_ERROR(Builder::TranslateGraph(
           input_shapes, {}, &graph_for_current_encapsulate, ng_function));
-      if (NGraphClusterManager::s_ng_functions.find(cluster_idx) !=
-          NGraphClusterManager::s_ng_functions.end()) {
+      string op_backend_name;
+      ng::runtime::Backend* op_backend = nullptr;
+      TF_RETURN_IF_ERROR(CreateBackendAndSetConfig(n, op_backend, op_backend_name));
+      try{
+        auto ng_exec = op_backend->compile(ng_function);
+        NGraphClusterManager::s_ng_execs.insert({cluster_idx, ng_exec});
+      } catch (...) {
+        return errors::Internal("Failed to compile dynamic wrapped backend");
+      }
+      if (NGraphClusterManager::s_ng_execs.find(cluster_idx) !=
+          NGraphClusterManager::s_ng_execs.end()) {
         return errors::Internal("Cluster id ", cluster_idx, " found twice");
       }
-      NGraphClusterManager::s_ng_functions.insert({cluster_idx, ng_function});
     }
   } else {
-    NGRAPH_VLOG(3) << "Performing AOT in EncapsulateClusters";
     TF_RETURN_IF_ERROR(PerformAOTOnEncapsulates(graph, aot_info));
   }
 
@@ -149,6 +156,66 @@ Status EncapsulateClusters(
   return Status::OK();
 }
 
+Status CreateBackendAndSetConfig(Node* node, ngraph::runtime::Backend*& op_backend, string& op_backend_name) {
+  if (node->type_string() != "NGraphEncapsulate") {
+    return errors::Internal(
+        "This function should only be called on an NGraphEncapsulate, but was "
+        "called on ",
+        node->name(), " which is of type ", node->type_string());
+  }
+  // get backend.
+          // TODO: these sections can be hoisted out of the main loop
+          std::string backend_name;
+          TF_RETURN_IF_ERROR(
+              GetNodeAttr(node->attrs(), "ngraph_backend", &backend_name));
+          std::string device_id;
+          TF_RETURN_IF_ERROR(
+              GetNodeAttr(node->attrs(), "ngraph_device_id", &device_id));
+          try {
+            op_backend_name = BackendManager::GetBackendCreationString(
+                backend_name, device_id);
+          } catch (const std::exception& exp) {
+            return errors::Internal(
+                "Caught exception while creating backend string ", exp.what(),
+                "\n");
+          }
+          TF_RETURN_IF_ERROR(BackendManager::CreateBackend(
+              op_backend_name));  // Created a backend here. must free it
+          // TranslateGraph must be called AFTER CreateBackend because some TF
+          // ops like CNMS and gather use backend specific nodes
+          std::unordered_map<std::string, std::string> additional_attribute_map;
+          for (auto itr : node->attrs()) {
+            // Find the optional attributes to be sent to the backend.
+            // The optional attributes have '_ngraph_' appended to the start
+            // so we need to get rid of that and only send the remaining
+            // string
+            // since the backend will only look for that.
+            // '_ngraph_' is only appended for the bridge.
+            // For e.g. _ngraph_ice_cores --> ice_cores
+            if (itr.first.find("_ngraph_") != std::string::npos) {
+              // leave out _ngraph_aot_requested
+              if (itr.first.find("_ngraph_aot_requested") ==
+                  std::string::npos) {
+                additional_attribute_map.insert(
+                    {itr.first.substr(strlen("_ngraph_")), itr.second.s()});
+              }
+            }
+          }
+          BackendManager::SetConfig(op_backend_name, additional_attribute_map);
+
+
+    try {
+            op_backend = BackendManager::GetBackend(op_backend_name);
+          } catch (const std::out_of_range& e) {
+            NGRAPH_VLOG(5) << "Exception: " << e.what();
+            BackendManager::ReleaseBackend(op_backend_name);
+            throw;
+          }
+
+    return Status::OK();
+
+}
+
 Status PerformAOTOnEncapsulates(Graph* graph, const AOTInfo& aot_info) {
   bool aot_requested;
   set<string> performed_aot_on_enc;
@@ -161,6 +228,8 @@ Status PerformAOTOnEncapsulates(Graph* graph, const AOTInfo& aot_info) {
           "AOT requested for non grappler build. Please use grappler build if "
           "AOT is required");
     }
+    NGRAPH_VLOG(3) << "Performing AOT in EncapsulateClusters";
+
     string input_node_type = "Placeholder";
     // In case of grappler, we have Placeholder, which might contain shape info,
     // so it is possible we can aot without any provided shapes
@@ -264,46 +333,9 @@ Status PerformAOTOnEncapsulates(Graph* graph, const AOTInfo& aot_info) {
                 "that is not supported");
           }
 
-          // get backend.
-          // TODO: these sections can be hoisted out of the main loop
-          std::string backend_name;
-          TF_RETURN_IF_ERROR(
-              GetNodeAttr(node->attrs(), "ngraph_backend", &backend_name));
-          std::string device_id;
-          TF_RETURN_IF_ERROR(
-              GetNodeAttr(node->attrs(), "ngraph_device_id", &device_id));
           string op_backend_name;
-          try {
-            op_backend_name = BackendManager::GetBackendCreationString(
-                backend_name, device_id);
-          } catch (const std::exception& exp) {
-            return errors::Internal(
-                "Caught exception while creating backend string ", exp.what(),
-                "\n");
-          }
-          TF_RETURN_IF_ERROR(BackendManager::CreateBackend(
-              op_backend_name));  // Created a backend here. must free it
-          // TranslateGraph must be called AFTER CreateBackend because some TF
-          // ops like CNMS and gather use backend specific nodes
-          std::unordered_map<std::string, std::string> additional_attribute_map;
-          for (auto itr : node->attrs()) {
-            // Find the optional attributes to be sent to the backend.
-            // The optional attributes have '_ngraph_' appended to the start
-            // so we need to get rid of that and only send the remaining
-            // string
-            // since the backend will only look for that.
-            // '_ngraph_' is only appended for the bridge.
-            // For e.g. _ngraph_ice_cores --> ice_cores
-            if (itr.first.find("_ngraph_") != std::string::npos) {
-              // leave out _ngraph_aot_requested
-              if (itr.first.find("_ngraph_aot_requested") ==
-                  std::string::npos) {
-                additional_attribute_map.insert(
-                    {itr.first.substr(strlen("_ngraph_")), itr.second.s()});
-              }
-            }
-          }
-          BackendManager::SetConfig(op_backend_name, additional_attribute_map);
+          ng::runtime::Backend* op_backend = nullptr;
+          TF_RETURN_IF_ERROR(CreateBackendAndSetConfig(node, op_backend, op_backend_name));
 
           // Backend has been created and setup. Now translate
           string signature;
@@ -316,14 +348,8 @@ Status PerformAOTOnEncapsulates(Graph* graph, const AOTInfo& aot_info) {
               ngraph::serialize(ng_function, json_indentation));
 
           // Translation done, now compile
-          ng::runtime::Backend* op_backend = nullptr;
-          try {
-            op_backend = BackendManager::GetBackend(op_backend_name);
-          } catch (const std::out_of_range& e) {
-            NGRAPH_VLOG(5) << "Exception: " << e.what();
-            BackendManager::ReleaseBackend(op_backend_name);
-            throw;
-          }
+          
+          
           BackendManager::LockBackend(op_backend_name);
           std::shared_ptr<ngraph::runtime::Executable> ng_exec;
           try {

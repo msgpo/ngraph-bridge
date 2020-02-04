@@ -23,8 +23,8 @@ namespace ngraph_bridge {
 // Static initializers
 std::vector<GraphDef*> NGraphClusterManager::s_cluster_graphs;
 std::mutex NGraphClusterManager::s_cluster_graphs_mutex;
-std::map<size_t, std::shared_ptr<ngraph::Function>>
-    NGraphClusterManager::s_ng_functions;
+std::map<size_t, std::shared_ptr<ngraph::runtime::Executable>>
+    NGraphClusterManager::s_ng_execs;
 
 size_t NGraphClusterManager::NewCluster() {
   std::lock_guard<std::mutex> guard(s_cluster_graphs_mutex);
@@ -41,7 +41,7 @@ GraphDef* NGraphClusterManager::GetClusterGraph(size_t idx) {
 
 void NGraphClusterManager::EvictAllClusters() {
   s_cluster_graphs.clear();
-  s_ng_functions.clear();
+  s_ng_execs.clear();
 }
 
 }  // namespace ngraph_bridge

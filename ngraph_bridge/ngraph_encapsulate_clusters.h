@@ -123,6 +123,10 @@ Status PerformAOTOnEncapsulates(Graph* graph, const AOTInfo& aot_info);
 
 std::string HintAsString(ShapeHintMap single_hint);
 
+// Given an encapsulate node, creates the backend necesary for it (and places it in backend manager)
+// Also returns the backend creation name
+Status CreateBackendAndSetConfig(Node*, ngraph::runtime::Backend*&, string&);
+
 // Given a node, partialshape info from TF (present in the .pb itself) and a
 // shape hint, combine all that information
 PartialShape CombineNodeInfoAndHint(Node* node,
