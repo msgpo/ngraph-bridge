@@ -92,9 +92,7 @@ NGraphEncapsulateOp::NGraphEncapsulateOp(OpKernelConstruction* ctx)
   m_use_parallel_executor = backend->executable_can_create_tensors();
   // if dynamic, then !m_use_parallel_executor
   // Since dynamic backends do not have executable create tensors yet
-  OP_REQUIRES(ctx, config::IsDynamic() && !m_use_parallel_executor,
-              errors::Internal("In dynamic mode. Dynamic wrapped backends "
-                               "cannot have executables creating tensors"));
+  OP_REQUIRES(ctx,!config::IsDynamic() || (config::IsDynamic() && !m_use_parallel_executor), errors::Internal("In dynamic mode. Dynamic wrapped backends cannot have executables creating tensors"));
 
   // Override the switch for debugging/testing
   if (std::getenv("NGRAPH_TF_USE_LEGACY_EXECUTOR") != nullptr) {
