@@ -92,7 +92,10 @@ NGraphEncapsulateOp::NGraphEncapsulateOp(OpKernelConstruction* ctx)
   m_use_parallel_executor = backend->executable_can_create_tensors();
   // if dynamic, then !m_use_parallel_executor
   // Since dynamic backends do not have executable create tensors yet
-  OP_REQUIRES(ctx,!config::IsDynamic() || (config::IsDynamic() && !m_use_parallel_executor), errors::Internal("In dynamic mode. Dynamic wrapped backends cannot have executables creating tensors"));
+  OP_REQUIRES(ctx, !config::IsDynamic() ||
+                       (config::IsDynamic() && !m_use_parallel_executor),
+              errors::Internal("In dynamic mode. Dynamic wrapped backends "
+                               "cannot have executables creating tensors"));
 
   // Override the switch for debugging/testing
   if (std::getenv("NGRAPH_TF_USE_LEGACY_EXECUTOR") != nullptr) {
@@ -311,8 +314,7 @@ void NGraphEncapsulateOp::CreateLegacyExecutor(OpKernelConstruction* ctx,
   NGRAPH_VLOG(5) << "Executable can " << (exec_can_create_tensor ? "" : "not")
                  << " create tensors";
 
-  if (config::IsDynamic())
-    ng_encap_impl_.SetDynamic();
+  if (config::IsDynamic()) ng_encap_impl_.SetDynamic();
   event.Stop();
   ngraph::Event::write_trace(event);
 }
@@ -624,7 +626,6 @@ void NGraphEncapsulateOp::ComputeUsingParallelExecutor(OpKernelContext* ctx) {
   NGRAPH_VLOG(2) << "COMPUTE: Done " << name();
 }
 
-
 //---------------------------------------------------------------------------
 //    ComputeUsingLegacyExecutor
 //---------------------------------------------------------------------------
@@ -658,7 +659,8 @@ void NGraphEncapsulateOp::ComputeUsingLegacyExecutor(OpKernelContext* ctx) {
   int step_id = ctx->step_id();
 
   if (ng_encap_impl_.IsDynamic()) {
-    ng_exec = NGraphClusterManager::s_ng_execs.at(ng_encap_impl_.GetNgraphCluster());
+    ng_exec =
+        NGraphClusterManager::s_ng_execs.at(ng_encap_impl_.GetNgraphCluster());
   } else {
     // Get ngraph executable and inputs information
     OP_REQUIRES_OK(ctx, ng_encap_impl_.GetNgExecutable(
@@ -683,7 +685,10 @@ void NGraphEncapsulateOp::ComputeUsingLegacyExecutor(OpKernelContext* ctx) {
   PipelinedTensorVector inp_group_from_pipeline;
   PipelinedTensorVector out_group_from_pipeline;
   if (ng_encap_impl_.GetExecCanCreateTensor()) {
-    OP_REQUIRES(ctx, !ng_encap_impl_.IsDynamic(), errors::Internal("Dynamic backends do not have executables that create tensors"));
+    OP_REQUIRES(
+        ctx, !ng_encap_impl_.IsDynamic(),
+        errors::Internal(
+            "Dynamic backends do not have executables that create tensors"));
     std::tuple<int, PipelinedTensorVector, PipelinedTensorVector> tmp_tpl;
     OP_REQUIRES_OK(ctx,
                    ng_encap_impl_.GetPipelineIdxAndTensors(ng_exec, tmp_tpl));

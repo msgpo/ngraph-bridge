@@ -35,7 +35,8 @@ class NGraphClusterManager {
 
   // public data member
   // TODO beautify/add accessors etc for this later
-  static std::map<size_t, std::shared_ptr<ngraph::runtime::Executable>> s_ng_execs;
+  static std::map<size_t, std::shared_ptr<ngraph::runtime::Executable>>
+      s_ng_execs;
 
  private:
   static std::vector<tensorflow::GraphDef*> s_cluster_graphs;

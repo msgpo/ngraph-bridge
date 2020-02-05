@@ -123,7 +123,8 @@ Status PerformAOTOnEncapsulates(Graph* graph, const AOTInfo& aot_info);
 
 std::string HintAsString(ShapeHintMap single_hint);
 
-// Given an encapsulate node, creates the backend necesary for it (and places it in backend manager)
+// Given an encapsulate node, creates the backend necesary for it (and places it
+// in backend manager)
 // Also returns the backend creation name
 Status CreateBackendAndSetConfig(Node*, ngraph::runtime::Backend*&, string&);
 
