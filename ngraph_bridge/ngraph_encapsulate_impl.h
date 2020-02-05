@@ -145,7 +145,7 @@ class NGraphEncapsulateImpl {
   void SetLogCopies(bool value) { log_copies = value; }
 
   void SetDynamic() { m_is_dynamic = true; };
-  void IsDynamic() { return m_is_dynamic; };
+  bool IsDynamic() { return m_is_dynamic; };
 
   const string GetCopyLog() { return copy_log_str.str(); }
 

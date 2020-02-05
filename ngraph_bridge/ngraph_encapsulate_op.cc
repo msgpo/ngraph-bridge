@@ -657,10 +657,14 @@ void NGraphEncapsulateOp::ComputeUsingLegacyExecutor(OpKernelContext* ctx) {
 
   int step_id = ctx->step_id();
 
-  // Get ngraph executable and inputs information
-  OP_REQUIRES_OK(ctx, ng_encap_impl_.GetNgExecutable(
-                          tf_input_tensors, input_shapes, static_input_map,
-                          op_backend, ng_exec));
+  if (ng_encap_impl_.IsDynamic()) {
+    ng_exec = NGraphClusterManager::s_ng_execs.at(ng_encap_impl_.GetNgraphCluster());
+  } else {
+    // Get ngraph executable and inputs information
+    OP_REQUIRES_OK(ctx, ng_encap_impl_.GetNgExecutable(
+                            tf_input_tensors, input_shapes, static_input_map,
+                            op_backend, ng_exec));
+  }
 
   NGRAPH_VLOG(1) << " Step_ID: " << step_id;
   NGRAPH_VLOG(4)
@@ -679,6 +683,7 @@ void NGraphEncapsulateOp::ComputeUsingLegacyExecutor(OpKernelContext* ctx) {
   PipelinedTensorVector inp_group_from_pipeline;
   PipelinedTensorVector out_group_from_pipeline;
   if (ng_encap_impl_.GetExecCanCreateTensor()) {
+    OP_REQUIRES(ctx, !ng_encap_impl_.IsDynamic(), errors::Internal("Dynamic backends do not have executables that create tensors"));
     std::tuple<int, PipelinedTensorVector, PipelinedTensorVector> tmp_tpl;
     OP_REQUIRES_OK(ctx,
                    ng_encap_impl_.GetPipelineIdxAndTensors(ng_exec, tmp_tpl));
@@ -709,6 +714,7 @@ void NGraphEncapsulateOp::ComputeUsingLegacyExecutor(OpKernelContext* ctx) {
   vector<shared_ptr<ng::runtime::Tensor>> ng_inputs;
   int ng_input_tensor_size_in_bytes = 0;
 
+  // TODO: need to create dyn tensors in GetCurrentNgTensor?
   OP_REQUIRES_OK(ctx, ng_encap_impl_.AllocateNGInputTensors(
                           tf_input_tensors, ng_exec, inp_group_from_pipeline,
                           op_backend, ng_inputs));
