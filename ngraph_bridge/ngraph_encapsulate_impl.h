@@ -144,6 +144,9 @@ class NGraphEncapsulateImpl {
 
   void SetLogCopies(bool value) { log_copies = value; }
 
+  void SetDynamic() { m_is_dynamic = true; };
+  void IsDynamic() { return m_is_dynamic; };
+
   const string GetCopyLog() { return copy_log_str.str(); }
 
   const std::vector<bool> GetStaticInputVector() { return m_input_is_static; }
@@ -258,6 +261,8 @@ class NGraphEncapsulateImpl {
   GetTensorsFromPipeline(std::shared_ptr<ngraph::runtime::Executable> ng_exec);
 
   int m_depth{2};  // TODO make this settable
+
+  bool m_is_dynamic = false;
 };
 
 }  // namespace ngraph_bridge
