@@ -37,17 +37,16 @@ import ngraph_bridge
 class TestPrefetched(NgraphTest):
 
     def build_data_pipeline(self, input_array, map_function, batch_size):
-        dataset = (tf.data.Dataset.from_tensor_slices(
-            (tf.constant(input_array)
-            )).map(map_function).batch(batch_size).prefetch(1))
+        dataset = tf.data.Dataset.from_tensor_slices(tf.constant(
+            input_array)).map(map_function).batch(batch_size).prefetch(1)
 
         iterator = dataset.make_initializable_iterator()
         data_to_be_prefetched_and_used = iterator.get_next()
         return data_to_be_prefetched_and_used, iterator
 
-    def build_model1(self, input_array, c1, c2):
+    def build_model(self, prefetched_data, c1, c2):
         # Convert the numpy array to TF Tensor
-        input_f = tf.cast(input_array, tf.float32)
+        input_f = tf.cast(prefetched_data, tf.float32)
 
         # Define the Ops
         pl1 = tf.placeholder(dtype=dtypes.int32)
@@ -61,24 +60,38 @@ class TestPrefetched(NgraphTest):
         output = add2 - c2
         return output, pl1, pl2
 
+    def build_model_multiple_iter(self, iter1, iter2, c1, c2):
+        # Convert the numpy array to TF Tensor
+        input_f1 = tf.cast(iter1, tf.float32)
+        input_f2 = tf.cast(iter2, tf.float32)
+
+        # Define the Ops
+        pl1 = tf.placeholder(dtype=dtypes.int32)
+        pl1_f = tf.cast(pl1, tf.float32)
+        pl2 = tf.placeholder(dtype=dtypes.int32)
+        pl2_f = tf.cast(pl2, tf.float32)
+
+        mul = tf.compat.v1.math.multiply(input_f1, c1)
+        add = tf.compat.v1.math.add(input_f2, pl2_f)
+        add2 = add + mul + pl1_f
+        output = add2 - c2 - input_f1
+        return output, pl1, pl2
+
     def __run_test(self, pipeline_creator, model):
         # build model
         input_array = [1, 2, 3, 4, 5, 6, 7, 8, 9]
         map_multiplier = 10
         map_function = lambda x: x * map_multiplier
         batch_size = 1
-        pipeline, iterator = pipeline_creator(input_array, map_function,
-                                              batch_size)
-
+        prefetched_data, iterator = pipeline_creator(input_array, map_function,
+                                                     batch_size)
         # some constants
         c1 = 5.0
         c2 = 10.0
-        model, pl1, pl2 = model(pipeline, c1, c2)
+        model, pl1, pl2 = model(prefetched_data, c1, c2)
 
         outputs = []
-
         sess = tf.Session()
-
         # Initialize the globals and the dataset
         sess.run(iterator.initializer)
 
@@ -95,8 +108,7 @@ class TestPrefetched(NgraphTest):
         self.set_env_variable(prefetch_env, "1")
 
         # Run on nGraph
-        ng_outputs = self.__run_test(self.build_data_pipeline,
-                                     self.build_model1)
+        ng_outputs = self.__run_test(self.build_data_pipeline, self.build_model)
 
         # Reset Graph
         tf.reset_default_graph()
@@ -104,8 +116,7 @@ class TestPrefetched(NgraphTest):
         # Run on TF
         disable_tf = "NGRAPH_TF_DISABLE"
         self.set_env_variable(disable_tf, "1")
-        tf_outputs = self.__run_test(self.build_data_pipeline,
-                                     self.build_model1)
+        tf_outputs = self.__run_test(self.build_data_pipeline, self.build_model)
 
         # Compare Values
         assert np.allclose(ng_outputs, tf_outputs)
@@ -114,3 +125,54 @@ class TestPrefetched(NgraphTest):
         self.unset_env_variable(prefetch_env)
         self.unset_env_variable(disable_tf)
         self.restore_env_variables(env_var_map)
+
+    def __run_test_multiple_iter(self, pipeline_creator, model):
+        # build model
+        input_array = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+        map_multiplier = 10
+        map_function = lambda x: x * map_multiplier
+        batch_size = 1
+
+        prefetched_data1, iterator1 = pipeline_creator(input_array,
+                                                       map_function, batch_size)
+
+        prefetched_data2, iterator2 = pipeline_creator(input_array,
+                                                       map_function, batch_size)
+        # some constants
+        c1 = 5.0
+        c2 = 10.0
+        model, pl1, pl2 = model(prefetched_data1, prefetched_data2, c1, c2)
+
+        outputs = []
+
+        sess = tf.Session()
+
+        # Initialize the globals and the dataset
+        sess.run(iterator1.initializer)
+        sess.run(iterator2.initializer)
+
+        for i in range(1, 10):
+            output = sess.run(model, feed_dict={pl1: i, pl2: i + 3})
+            outputs.append(output)
+
+        return outputs
+
+    def test_prefetch2(self):
+        # TO DO: Implement changes to support multiple iterator
+        # then test with "NGRAPH_TF_USE_PREFETCH=1"
+
+        # Run on nGraph
+        ng_outputs = self.__run_test_multiple_iter(
+            self.build_data_pipeline, self.build_model_multiple_iter)
+
+        # Reset Graph
+        tf.reset_default_graph()
+
+        # Run on TF
+        disable_tf = "NGRAPH_TF_DISABLE"
+        self.set_env_variable(disable_tf, "1")
+        tf_outputs = self.__run_test_multiple_iter(
+            self.build_data_pipeline, self.build_model_multiple_iter)
+
+        # Compare Values
+        assert np.allclose(ng_outputs, tf_outputs)
