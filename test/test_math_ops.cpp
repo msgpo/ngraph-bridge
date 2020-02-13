@@ -1677,7 +1677,7 @@ TEST(MathOps, MaxPositiveAxis) {
   // should be -rank <= axis < rank
   vector<int> axis_ = {0};
 
-  vector<int> static_input_indexes = {1};
+  vector<int> static_input_indexes = {};
   vector<DataType> output_datatypes = {DT_FLOAT};
 
   for (auto const& axis : axis_) {
