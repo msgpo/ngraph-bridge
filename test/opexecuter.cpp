@@ -407,7 +407,7 @@ void OpExecuter::ExecuteOnNGraph(vector<Tensor>& ngraph_outputs,
   NGRAPH_VLOG(5) << " Creating ng outputs ";
   vector<TensorShape> tf_op_shapes;
   for (int i = 0; i < number_of_outputs; i++) {
-    auto ng_op_shape = ng_function->get_output_partial_shape(i);
+    auto ng_op_shape = ng_function->get_output_shape(i);
     auto ng_op_type = ng_function->get_output_element_type(i);
 
     ng::element::Type ng_et_expected;
@@ -421,13 +421,13 @@ void OpExecuter::ExecuteOnNGraph(vector<Tensor>& ngraph_outputs,
     ASSERT_EQ(ng_et_expected, ng_op_type)
         << "Expected Ngraph datatype of " << i << "th output is "
         << ng_et_expected << ", but ngraph function has " << ng_op_type;
-    // vector<int64> dims;
-    // for (auto dim : ng_op_shape) {
-    //   dims.push_back(dim);
-    // }
-    // TensorShape tf_shape(dims);
-    // tf_op_shapes.push_back(tf_shape);
-    auto result = backend->create_dynamic_tensor(ng_op_type, ng_op_shape);
+    vector<int64> dims;
+    for (auto dim : ng_op_shape) {
+      dims.push_back(dim);
+    }
+    TensorShape tf_shape(dims);
+    tf_op_shapes.push_back(tf_shape);
+    auto result = backend->create_tensor(ng_op_type, ng_op_shape);
     ng_op_tensors.push_back(result);
   }
 
@@ -454,15 +454,8 @@ void OpExecuter::ExecuteOnNGraph(vector<Tensor>& ngraph_outputs,
 
   NGRAPH_VLOG(5) << " Writing to Tensors ";
   for (size_t i = 0; i < ng_function->get_output_size(); i++) {
-    //
     // Convert to tf tensor
-    ng::Shape ng_shape = ng_op_tensors[i]->get_shape();
-    vector<int64> dims;
-    for (auto dim : ng_shape) {
-      dims.push_back(dim);
-    }
-    TensorShape tf_shape(dims);
-    Tensor output_tensor(expected_output_datatypes_[i], tf_shape);
+    Tensor output_tensor(expected_output_datatypes_[i], tf_op_shapes[i]);
     void* dst_ptr = DMAHelper::base(&output_tensor);
     ng_op_tensors[i]->read(dst_ptr, output_tensor.TotalBytes());
     ngraph_outputs.push_back(output_tensor);
