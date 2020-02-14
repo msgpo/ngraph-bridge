@@ -32,6 +32,8 @@
 #include "ngraph/slice_plan.hpp"
 
 #include "logging/ngraph_log.h"
+#include "ngraph/pass/manager.hpp"
+#include "ngraph/pass/opset1_upgrade.hpp"
 #include "ngraph_bridge/ngraph_api.h"
 #include "ngraph_bridge/ngraph_backend_manager.h"
 #include "ngraph_bridge/ngraph_builder.h"
@@ -5377,6 +5379,11 @@ Status Builder::TranslateGraph(
       }
     }
   }
+
+  // Upgrade all Nodes to Opset1
+  ng::pass::Manager pass_manager;
+  pass_manager.register_pass<ng::pass::Opset1Upgrade>();
+  pass_manager.run_passes(ng_function);
 
   return Status::OK();
 }
