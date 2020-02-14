@@ -5034,22 +5034,6 @@ static Status TranslateSelectOp(const Node* op,
   return Status::OK();
 }
 
-static Status TranslateMaxDynamicOp(
-    const Node* op, const std::vector<const Tensor*>& static_input_map,
-    Builder::OpMap& ng_op_map) {
-  shared_ptr<ng::Node> ng_input, ng_max_op, ng_max;
-  TF_RETURN_IF_ERROR(GetInputNodes(ng_op_map, op, &ng_input, &ng_max_op));
-
-  bool tf_keep_dims;
-  if (GetNodeAttr(op->attrs(), "keep_dims", &tf_keep_dims) != Status::OK()) {
-    tf_keep_dims = false;
-  }
-  ng_max = ConstructNgNode<ng::op::v1::ReduceMax>(op->name(), ng_input,
-                                                  ng_max_op, tf_keep_dims);
-
-  SaveNgOp(ng_op_map, op->name(), ng_max);
-  return Status::OK();
-}
 static Status TranslateZerosLikeOp(const Node* op,
                                    const std::vector<const Tensor*>&,
                                    Builder::OpMap& ng_op_map) {
@@ -5121,7 +5105,8 @@ const static std::map<
       {"LogicalAnd", TranslateBinaryOp<ngraph::op::And>},
       {"LogicalNot", TranslateUnaryOp<ngraph::op::Not>},
       {"LogicalOr", TranslateBinaryOp<ngraph::op::Or>},
-      {"MatMul", TranslateMatMulOp}, {"Max", TranslateMaxDynamicOp},
+      {"MatMul", TranslateMatMulOp},
+      {"Max", TranslateDirectReduceOp<ng::op::Max>},
       {"Maximum", TranslateBinaryOp<ngraph::op::Maximum>},
       {"MaxPool", TranslateMaxPoolOp}, {"MaxPool3D", TranslateMaxPool3DOp},
       {"MaxPoolGrad", TranslateMaxPoolGradOp},
