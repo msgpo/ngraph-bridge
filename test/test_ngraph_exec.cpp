@@ -181,7 +181,7 @@ class NGraphExecTest : public ::testing::Test {
 TEST(NGraphExecTest, DynShapesConstInputs) {
   auto const2 = make_shared<ng::op::Constant>(
       ng::element::f32, ng::Shape({2, 3}),
-      vector<string>{"1.0", "1.0", "1.0", "1.0", "1.0", "1.0"});
+      vector<string>{"1.0", "12.0", "3.0", "14.0", "5.0", "6.0"});
   auto const1 = make_shared<ng::op::Constant>(ng::element::i64, ng::Shape({}),
                                               vector<string>{"1"});
   auto max = make_shared<ng::op::v1::ReduceMax>(const2, const1, true);
@@ -191,57 +191,55 @@ TEST(NGraphExecTest, DynShapesConstInputs) {
   auto backend = ng::runtime::Backend::create("CPU");
 
   auto ng_exec = backend->compile(ng_function);
-  
-  // Allocate tensor for the result(s)
-  vector<shared_ptr<ng::runtime::Tensor>> outputs;
-  for (size_t i = 0; i < ng_function->get_output_size(); i++) {
-    auto shape = ng_function->get_output_shape(i);
-    auto elem_type = ng_function->get_output_element_type(i);
-    auto t_result = backend->create_tensor(elem_type, shape);
-    outputs.push_back(t_result);
-  }
-  // Execute the nGraph function.
-  ng_exec->call(outputs, {});
-  for (size_t i = 0; i < ng_function->get_output_size(); i++) {
-    DumpNGTensor<float>(cout, ng_function->get_output_op(i)->get_name(),
-                        outputs[i]);
-    cout << endl;
-  }
 
+  // Allocate tensor for the result(s)
+  ng::Shape res_shape = ng_exec->get_results()[0]->get_shape();
+  ng::element::Type res_element_type =
+      ng_exec->get_results()[0]->get_element_type();
+  auto res1_tensor = backend->create_tensor(res_element_type, res_shape);
+
+  // Execute the nGraph function.
+  ng_exec->call({res1_tensor}, {});
+  DumpNGTensor<float>(cout, ng_function->get_output_op(0)->get_name(),
+                      res1_tensor);
+  cout << endl;
 }
 
-TEST(NGraphExecTest, DynShapesConstInputs) {
-  auto const2 = make_shared<ng::op::Constant>(
-      ng::element::f32, ng::Shape({2, 3}),
-      vector<string>{"1.0", "1.0", "1.0", "1.0", "1.0", "1.0"});
+TEST(NGraphExecTest, DynShapesConstParaInputs) {
+  ng::Shape parameter_shape = ng::Shape({2, 3});
+  ng::element::Type parameter_element_type = ng::element::f32;
+
+  auto para1 =
+      make_shared<ng::op::Parameter>(parameter_element_type, parameter_shape);
   auto const1 = make_shared<ng::op::Constant>(ng::element::i64, ng::Shape({}),
                                               vector<string>{"1"});
-  auto max = make_shared<ng::op::v1::ReduceMax>(const2, const1, true);
+  auto max = make_shared<ng::op::v1::ReduceMax>(para1, const1, true);
 
-  auto ng_function =
-      make_shared<ng::Function>(ng::NodeVector({max}), ng::ParameterVector({}));
+  auto ng_function = make_shared<ng::Function>(ng::NodeVector({max}),
+                                               ng::ParameterVector({para1}));
   auto backend = ng::runtime::Backend::create("CPU");
 
   auto ng_exec = backend->compile(ng_function);
-  
+
+  // Allocate tensor for the input paramter(s)
+  auto para1_tensor =
+      backend->create_tensor(parameter_element_type, parameter_shape);
+  float val_para[2][3] = {{1, 1, 1}, {1, 1, 1}};
+  para1_tensor->write(&val_para, sizeof(val_para));
+
   // Allocate tensor for the result(s)
-  vector<shared_ptr<ng::runtime::Tensor>> outputs;
-  for (size_t i = 0; i < ng_function->get_output_size(); i++) {
-    auto shape = ng_function->get_output_shape(i);
-    auto elem_type = ng_function->get_output_element_type(i);
-    auto t_result = backend->create_tensor(elem_type, shape);
-    outputs.push_back(t_result);
-  }
+  ng::Shape res_shape = ng_exec->get_results()[0]->get_shape();
+  ng::element::Type res_element_type =
+      ng_exec->get_results()[0]->get_element_type();
+  auto res1_tensor = backend->create_tensor(res_element_type, res_shape);
+
   // Execute the nGraph function.
-  ng_exec->call(outputs, {});
-  for (size_t i = 0; i < ng_function->get_output_size(); i++) {
-    DumpNGTensor<float>(cout, ng_function->get_output_op(i)->get_name(),
-                        outputs[i]);
-    cout << endl;
-  }
+  ng_exec->call({res1_tensor}, {para1_tensor});
+  DumpNGTensor<float>(cout, ng_function->get_output_op(0)->get_name(),
+                      res1_tensor);
+  cout << endl;
 
 }  // end of test op Max
-
 
 TEST_F(NGraphExecTest, Axpy) {
   Graph input_graph(OpRegistry::Global());
