@@ -179,14 +179,14 @@ class NGraphExecTest : public ::testing::Test {
 };
 
 TEST(NGraphExecTest, MaxPositiveAxis) {
-  auto para = make_shared<ng::op::Parameter>(ng::element::i32, ng::Shape{});
-  auto const1 = make_shared<ng::op::Constant>(ng::element::i32, ng::Shape{},
+  auto para = make_shared<ng::op::Parameter>(ng::element::f32, ng::Shape{2,3});
+  auto const1 = make_shared<ng::op::Constant>(ng::element::f32, ng::Shape{},
                                               vector<string>{"1"});
 
   // subgraph
   auto max = make_shared<ng::op::v1::ReduceMax>(para, const1, false);
     auto ng_function =
-        make_shared<ng::Function>(ng::NodeVector({max}), ng::ParameterVector({para});
+        make_shared<ng::Function>(ng::NodeVector({max}), ng::ParameterVector({para}));
 
     auto backend = ng::runtime::Backend::create("CPU");
 
