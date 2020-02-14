@@ -844,7 +844,7 @@ GetTFToNgOpMap() {
         {"MatMul",
          {std::make_shared<ngraph::op::Reshape>(),
           std::make_shared<ngraph::op::Dot>()}},
-        {"Max", {std::make_shared<ng::op::v1::ReduceMax>()}},
+        {"Max", {std::make_shared<ngraph::op::Max>(), constant}},
         {"Maximum",
          {std::make_shared<ngraph::op::Maximum>(),
           std::make_shared<ngraph::op::Broadcast>()}},
