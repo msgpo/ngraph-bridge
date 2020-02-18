@@ -53,7 +53,7 @@ def main():
     '''
 
     # Component versions
-    ngraph_version = "v0.28.0-rc.1"
+    ngraph_version = "sarkars/opv_backend"
     tf_version = "v1.14.0"
 
     # Command line parser options
@@ -86,6 +86,12 @@ def main():
         '--build_plaidml_backend',
         help=
         "nGraph backends will include PlaidML backend. Use: NGRAPH_TF_BACKEND=PLAIDML\n",
+        action="store_true")
+
+    parser.add_argument(
+        '--build_opv_backend',
+        help=
+        "nGraph backends will include OpenVino backend. Use: NGRAPH_TF_BACKEND=OPV\n",
         action="store_true")
 
     parser.add_argument(
@@ -393,6 +399,10 @@ def main():
     ngraph_cmake_flags.extend([
         "-DNGRAPH_PLAIDML_ENABLE=" +
         flag_string_map[arguments.build_plaidml_backend]
+    ])
+    ngraph_cmake_flags.extend([
+        "-DNGRAPH_OPV_ENABLE=" +
+        flag_string_map[arguments.build_opv_backend]
     ])
     ngraph_cmake_flags.extend([
         "-DNGRAPH_INTELGPU_ENABLE=" +
