@@ -28,7 +28,7 @@
 #include "tensorflow/core/util/saved_tensor_slice_util.h"
 
 #include "ngraph/ngraph.hpp"
-#include "ngraph/runtime/chrome_trace.hpp"
+#include "ngraph/chrome_trace.hpp"
 #include "ngraph/serializer.hpp"
 
 #include "logging/ngraph_log.h"

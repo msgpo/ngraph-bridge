@@ -404,6 +404,7 @@ def main():
         "-DNGRAPH_OPV_ENABLE=" +
         flag_string_map[arguments.build_opv_backend]
     ])
+    ngraph_cmake_flags.extend(["-DNGRAPH_UNIT_TEST_ENABLE=YES"])
     ngraph_cmake_flags.extend([
         "-DNGRAPH_INTELGPU_ENABLE=" +
         flag_string_map[arguments.build_intelgpu_backend]
