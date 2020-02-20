@@ -53,7 +53,7 @@ def main():
     '''
 
     # Component versions
-    ngraph_version = "sarkars/opv_backend"
+    ngraph_version = "sarkars/opv_backend_2"
     tf_version = "v1.14.0"
 
     # Command line parser options
