@@ -5088,9 +5088,10 @@ const static std::map<
       {"FusedBatchNormGrad", TranslateFusedBatchNormGradOp},
       {"GatherNd", TranslateGatherNdOp},
       {"FusedBatchNormGradV3", TranslateFusedBatchNormGradOp},
-      {"GatherV2", TranslateGatherV2Op},
       {"_FusedConv2D", TranslateFusedConv2DOp},
       {"_FusedMatMul", TranslateFusedMatMulOp},
+      {"Gather", TranslateGatherOp},
+      {"GatherV2", TranslateGatherV2Op},
       {"Greater", TranslateBinaryOp<ngraph::op::Greater>},
       {"GreaterEqual", TranslateBinaryOp<ngraph::op::GreaterEq>},
 #if defined(NGRAPH_DISTRIBUTED)
