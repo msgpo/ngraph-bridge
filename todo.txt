@@ -1,0 +1,13 @@
+how to choose between opv-cpu vs opv-vpu
+
+
+building ngraph:
+ng needs opv. opv needs ng.
+when opv is building ng NGRAPH_OPV_ENABLE is off. when ng is building for ngtfbridge NGRAPH_OPV_ENABLE is on
+
+bridge-->ng(NGRAPH_OPV_ENABLE=true)->opv->ng(NGRAPH_OPV_ENABLE=false)
+
+
+What branch to branch off? right now branched off b0bb801c91f091a125a6aeb38c51f10fc49f3425, since that is what opv dldt is using
+
+fix runtime::opv::OPVExecutable::call. The float* orig_data  part.
