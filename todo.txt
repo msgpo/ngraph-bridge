@@ -1,3 +1,10 @@
+how to build:
+./build_ngtf.py --use_tensorflow_from_location /localdisk/sarkars/tf_prebuilt/ngraph-bridge/tf_1_14_0 --build_opv_backend
+
+
+
+
+
 how to choose between opv-cpu vs opv-vpu?
 
 
