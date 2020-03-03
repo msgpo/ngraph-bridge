@@ -14,10 +14,10 @@
 #  limitations under the License.
 # ==============================================================================
 """nGraph TensorFlow variable_update + static input
-Var 
-| \ 
+Var
+| \
 |   \*
-|   Encap 
+|   Encap
 |   /
 Assign (or removed)
 * The input to Encap is a static input
@@ -30,9 +30,11 @@ import getpass
 import ctypes
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 from tensorflow.python.client import timeline
 import json
+import pytest
 
 import ngraph_bridge
 import os
@@ -100,6 +102,11 @@ class TestVariableStaticInputs(NgraphTest):
         var_final_val = var.eval(sess)
         return var_init_value, mean_values, var_final_val
 
+    # With TF2.0 the VariableV2 has been replaced with the VarHandleOp
+    # But, when built with --enable_variables_and_optimizers option
+    # looks for and captures VariableV2 and this test when run will not
+    # work as intended. Hence, we are disabling TF2.0 behaviour and
+    # and running it.
     # Tests when buffer sharing is not enabled
     def test_variable_static_input_variables_dont_share_buffer(self):
         # set env variable to disable NGraphVariable's buffer sharing

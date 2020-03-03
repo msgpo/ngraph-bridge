@@ -54,7 +54,7 @@ def main():
 
     # Component versions
     ngraph_version = "v0.28.0-rc.1"
-    tf_version = "v1.15.2"
+    tf_version = "v2.0.1"
 
     # Command line parser options
     parser = argparse.ArgumentParser(formatter_class=RawTextHelpFormatter)
@@ -150,6 +150,9 @@ def main():
         help="Builds and links ngraph statically\n",
         action="store_true")
 
+    parser.add_argument(
+        '--use_tensorflow_2', help="Builds with TF 2.0\n", action="store_true")
+
     # Done with the options. Now parse the commandline
     arguments = parser.parse_args()
 
@@ -206,6 +209,7 @@ def main():
 
     pwd = os.getcwd()
     ngraph_tf_src_dir = os.path.abspath(pwd)
+    print("NGTF SRC DIR: " + ngraph_tf_src_dir)
     build_dir_abs = os.path.abspath(build_dir)
     os.chdir(build_dir)
 
@@ -244,6 +248,9 @@ def main():
     # and thus this flag is set to 1
     cxx_abi = "1"
 
+    if arguments.use_tensorflow_2:
+        tf_version = "v2.0.1"
+
     if arguments.use_tensorflow_from_location != "":
         # Some asserts to make sure the directory structure of
         # use_tensorflow_from_location is correct. The location
@@ -279,7 +286,7 @@ def main():
     else:
         if arguments.use_prebuilt_tensorflow:
             print("Using existing TensorFlow")
-            # Frst download the source. This will create the tensorfow directory as needed
+            # First download the source. This will create the tensorfow directory as needed
             tf_src_dir = os.path.join(artifacts_location, "tensorflow")
             print("TF_SRC_DIR: ", tf_src_dir)
             # Download
@@ -296,7 +303,7 @@ def main():
             # can't even build TF on GCC 4.8.5 since MLIR module contains
             # code that requires c++14 or GCC 5 or better. That means
             # CXX11_ABI = 1 when the wheel is correctly built.
-            if ('1.15' not in tf_version):
+            if ('1.15' not in tf_version and '2.0' not in tf_version):
                 command_executor(
                     ["pip", "install", "-U", "tensorflow==" + tf_version])
                 cxx_abi = get_tf_cxxabi()
@@ -314,9 +321,15 @@ def main():
 
             # Copy the libtensorflow_framework.so to the artifacts so that
             # we can run c++ tests from that location later
-            tf_fmwk_lib_name = 'libtensorflow_framework.so.1'
+            if arguments.use_tensorflow_2:
+                tf_fmwk_lib_name = 'libtensorflow_framework.so.2'
+            else:
+                tf_fmwk_lib_name = 'libtensorflow_framework.so.1'
             if (platform.system() == 'Darwin'):
-                tf_fmwk_lib_name = 'libtensorflow_framework.1.dylib'
+                if arguments.use_tensorflow_2:
+                    tf_fmwk_lib_name = 'libtensorflow_framework.2.dylib'
+                else:
+                    tf_fmwk_lib_name = 'libtensorflow_framework.1.dylib'
             import tensorflow as tf
             tf_lib_dir = tf.sysconfig.get_lib()
             tf_lib_file = os.path.join(tf_lib_dir, tf_fmwk_lib_name)
@@ -340,6 +353,18 @@ def main():
                           "https://github.com/tensorflow/tensorflow.git",
                           tf_version)
             tf_src_dir = os.path.join(os.getcwd(), "tensorflow")
+            print("TF_SRC_DIR: ", tf_src_dir)
+
+            if arguments.use_tensorflow_2:
+                # For building TF 2.0 we need to apply the following patch
+                patch_file = os.path.abspath(
+                    os.path.join(ngraph_tf_src_dir, "tf2update.patch"))
+                pwd = os.getcwd()
+                os.chdir(tf_src_dir)
+                print("CURRENT DIR: " + os.getcwd())
+                apply_patch(patch_file)
+                os.chdir(pwd)
+
             # Build TensorFlow
             build_tensorflow(venv_dir, "tensorflow", artifacts_location,
                              target_arch, verbosity)
@@ -470,6 +495,11 @@ def main():
     ngraph_tf_cmake_flags.extend([
         "-DNGRAPH_TF_USE_GRAPPLER_OPTIMIZER=" +
         flag_string_map[arguments.use_grappler_optimizer]
+    ])
+
+    ngraph_tf_cmake_flags.extend([
+        "-DNGRAPH_TF_USE_TENSORFLOW_2=" +
+        flag_string_map[arguments.use_tensorflow_2]
     ])
 
     # Now build the bridge

@@ -24,7 +24,7 @@ a variety of nGraph-enabled backends: CPU, GPU, and custom silicon like the
 |Using pre-built packages| Building from source|
 | -----------------------|-------------------|
 |Python 3| Python 3|
-|TensorFlow v1.15.2|GCC 7.3 (Ubuntu), Clang/LLVM (macOS)|
+|TensorFlow v2.0.1|GCC 7.3 (Ubuntu), Clang/LLVM (macOS)|
 |        |`cmake` 3.4 or higher|
 |        |Bazel 0.25.2|
 |        |`virtualenv` 16.0.0|
@@ -43,7 +43,7 @@ a variety of nGraph-enabled backends: CPU, GPU, and custom silicon like the
 
 2. Install TensorFlow:
 
-        pip install -U tensorflow==1.15.2
+        pip install -U tensorflow==2.0.1
 
 3. Install `ngraph-tensorflow-bridge`:
 
@@ -131,10 +131,10 @@ Verify that `ngraph-bridge` installed correctly:
 
 This will produce something like this:
 
-        TensorFlow version:  1.15.2
+        TensorFlow version:  2.0.1
         nGraph bridge version: b'0.22.0-rc3'
         nGraph version used for this build: b'0.28.0-rc.1+d2cd873'
-        TensorFlow version used for this build: v1.15.2-0-g5d80e1e8e6
+        TensorFlow version used for this build: v2.0.1-0-g64c3d382ca
         CXX11_ABI flag used for this build: 1
         nGraph bridge built with Grappler: False
         nGraph bridge built with Variables and Optimizers Enablement: False
@@ -176,9 +176,9 @@ Modify the downloaded TensorFlow script to run TensorFlow with nGraph optimizati
 
     import ngraph_bridge
     ...
-    config = tf.ConfigProto()
+    config = tf.compat.v1.ConfigProto()
     config_ngraph_enabled = ngraph_bridge.update_config(config)
-    sess = tf.Session(config=config_ngraph_enabled) 
+    sess = tf.compat.v1.Session(config=config_ngraph_enabled)
 
 Run the classification:
 
