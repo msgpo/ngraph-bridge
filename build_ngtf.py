@@ -49,11 +49,11 @@ def version_check(use_prebuilt_tensorflow):
 
 def main():
     '''
-    Builds TensorFlow, ngraph, and ngraph-tf for python 3
+    Builds TensorFlow, ngraph/OpenVINO, and ngraph-tf for python 3
     '''
 
     # Component versions
-    ngraph_version = "v0.28.0-rc.1"
+    ngraph_version = "08c20a3c91fb2d84c89c8434d79a98346318498c"
     tf_version = "v1.15.2"
 
     # Command line parser options
@@ -150,6 +150,11 @@ def main():
         help="Builds and links ngraph statically\n",
         action="store_true")
 
+    parser.add_argument(
+        '--build_OpenVINO_IE',
+        help="Builds with OpenVINO Inference Engine \n",
+        action="store_true")
+
     # Done with the options. Now parse the commandline
     arguments = parser.parse_args()
 
@@ -161,6 +166,11 @@ def main():
         print("Building in with VERBOSE output messages\n")
         verbosity = True
 
+    # # error-checking
+    # if (arguments.build_OpenVINO_IE):
+    #     assert not (arguments.ngraph_version), "\"build_OpenVINO_IE\" and \"ngraph_version\" options cannot be used together."
+    #     assert not (arguments.ngraph_src_dir), "\"build_OpenVINO_IE\" and \"ngraph_src_dir\" options cannot be used together."
+
     #-------------------------------
     # Recipe
     #-------------------------------
@@ -170,6 +180,7 @@ def main():
     # Default directories
     build_dir = 'build_cmake'
 
+    # build TF
     assert not (
         arguments.use_tensorflow_from_location != '' and
         arguments.use_prebuilt_tensorflow
@@ -353,6 +364,8 @@ def main():
             # will be 1
             cxx_abi = install_tensorflow(venv_dir, artifacts_location)
 
+    # TF is built and installed at this point
+
     # Download nGraph if required.
     ngraph_src_dir = './ngraph'
     if arguments.ngraph_src_dir:
@@ -413,6 +426,12 @@ def main():
 
     build_ngraph(build_dir, ngraph_src_dir, ngraph_cmake_flags, verbosity)
 
+    # if open-vino is requested install it
+    if (arguments.build_OpenVINO_IE):
+        install_and_link_opv()
+
+    # Now build nGraph-TF-Bridge
+    # Next build CMAKE options for the bridge
     ngraph_tf_cmake_flags = [
         "-DNGRAPH_TF_INSTALL_PREFIX=" + artifacts_location,
         "-DUSE_PRE_BUILT_NGRAPH=ON",
@@ -441,7 +460,6 @@ def main():
                                                     "tensorflow")
         ])
 
-    # Next build CMAKE options for the bridge
     if arguments.use_tensorflow_from_location:
         ngraph_tf_cmake_flags.extend([
             "-DTF_SRC_DIR=" + os.path.abspath(
@@ -466,6 +484,9 @@ def main():
         "-DNGRAPH_TF_ENABLE_VARIABLES_AND_OPTIMIZERS=" +
         flag_string_map[arguments.enable_variables_and_optimizers]
     ])
+
+    ngraph_tf_cmake_flags.extend(
+        ["-DNGRAPH_TF_USE_OPV=" + flag_string_map[arguments.build_OpenVINO_IE]])
 
     ngraph_tf_cmake_flags.extend([
         "-DNGRAPH_TF_USE_GRAPPLER_OPTIMIZER=" +

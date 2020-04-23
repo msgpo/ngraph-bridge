@@ -398,6 +398,17 @@ def install_tensorflow(venv_dir, artifacts_dir):
     return str(cxx_abi)
 
 
+def install_and_link_opv():
+    print('**** Getting OpenVINO')
+    open_vino_url = "http://nncv-nas-01.ccr.corp.intel.com/ovino-pkg/packages/nightly/2020WW16.5/master/141/github/"
+    open_vino_runtime = "l_openvino_toolkit_runtime_ubuntu18_p_2020.2.141.tgz"
+    open_vino_package = open_vino_url + open_vino_runtime
+    command_executor(["wget", open_vino_package])
+
+    print('**** Extracting Package')
+    command_executor(["tar", "-xvzf", open_vino_runtime])
+
+
 def build_ngraph_tf(build_dir, artifacts_location, ngtf_src_loc, venv_dir,
                     cmake_flags, verbose):
     pwd = os.getcwd()
