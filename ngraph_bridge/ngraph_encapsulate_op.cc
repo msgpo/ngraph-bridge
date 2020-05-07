@@ -776,6 +776,13 @@ void NGraphEncapsulateOp::ComputeUsingLegacyExecutor(OpKernelContext* ctx) {
 #endif
 
   int time_create_or_lookup_tensors = create_or_lookup_tensors.ElapsedInMS();
+  cout << "ng_inputs " << ng_inputs.size() << endl;
+  cout << "ng_outputs " << ng_outputs.size() << endl;
+  // for(auto inp_tensor: ng_inputs){
+  //   Tensor t;
+  //   ReadNGTensor(inp_tensor,&t);
+  //   PrintTFTensor(t);
+  // }
 
   // Execute the nGraph function.
   int time_execute_function;

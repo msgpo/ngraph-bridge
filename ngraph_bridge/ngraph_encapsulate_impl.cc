@@ -151,9 +151,9 @@ Status NGraphEncapsulateImpl::GetNgExecutable(
 
     // Serialize to nGraph if needed
     if (std::getenv("NGRAPH_ENABLE_SERIALIZE") != nullptr) {
-      std::string file_name = "tf_function_" + m_name + ".json";
-      TF_RETURN_IF_ERROR(
-          StringToFile("tf_function_" + m_name + ".json", serialized_ng_func));
+      std::string file_name = "tf_function_ser" + m_name + ".json";
+      TF_RETURN_IF_ERROR(StringToFile("tf_function_seri" + m_name + ".json",
+                                      serialized_ng_func));
 #if defined NGRAPH_DISTRIBUTED
       int rank_id;
       rank_id = ng::get_distributed_interface()->get_rank();
