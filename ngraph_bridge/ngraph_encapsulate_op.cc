@@ -87,7 +87,7 @@ NGraphEncapsulateOp::NGraphEncapsulateOp(OpKernelConstruction* ctx)
       errors::Internal("Cannot get the backend object for BE: ", be_name));
 
   // If backend executable can create tensors we use parallel executor
-  m_use_parallel_executor = backend->executable_can_create_tensors();
+  m_use_parallel_executor = (be_name=="CPU")? false: (backend->executable_can_create_tensors());
 
   // Override the switch for debugging/testing
   if (std::getenv("NGRAPH_TF_USE_LEGACY_EXECUTOR") != nullptr) {
@@ -100,6 +100,8 @@ NGraphEncapsulateOp::NGraphEncapsulateOp(OpKernelConstruction* ctx)
   } else {
     CreateLegacyExecutor(ctx, be_name);
   }
+
+  cout<<" using parallel exec " <<PrintBool(m_use_parallel_executor) <<endl;
 }
 
 //---------------------------------------------------------------------------
@@ -949,7 +951,7 @@ void NGraphEncapsulateOp::ComputeUsingLegacyExecutor(OpKernelContext* ctx) {
   NGRAPH_VLOG(4)
       << "NGraphEncapsulateOp::Compute done marking fresh for cluster "
       << ng_encap_impl_.GetNgraphCluster();
-  NGRAPH_VLOG(1) << "NGRAPH_TF_TIMING_PROFILE: OP_ID: "
+  NGRAPH_VLOG(4) << "NGRAPH_TF_TIMING_PROFILE: OP_ID: "
                  << ng_encap_impl_.GetInstanceId() << " Step_ID: " << step_id
                  << " Cluster: " << name()
                  << " Time-Compute: " << compute_time.ElapsedInMS()
@@ -969,3 +971,4 @@ REGISTER_KERNEL_BUILDER(Name("NGraphEncapsulate").Device(DEVICE_CPU),
                         ngraph_bridge::NGraphEncapsulateOp);
 
 }  // namespace tensorflow
+
