@@ -1180,6 +1180,10 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
   for (auto node : graph->op_nodes()) {
     bool mark_for_clustering = false;
 
+    if (node->type_string() == "Shape") {
+      continue;
+    }
+
     if (IsNGVariableType(node->type_string())) {
       variable_type_nodes.push_back(node);
       continue;
