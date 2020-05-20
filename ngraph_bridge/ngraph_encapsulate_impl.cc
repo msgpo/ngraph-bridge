@@ -49,6 +49,12 @@
 #include "ngraph_bridge/ngraph_catalog.h"
 #endif
 
+#include "ngraph/op/get_output_element.hpp"
+#include "ngraph/opsets/opset.hpp"
+#include "ngraph/pass/manager.hpp"
+#include "ngraph/pass/opset1_upgrade.hpp"
+#include "ngraph/pass/constant_folding.hpp"
+
 using namespace std;
 namespace ng = ngraph;
 
@@ -137,8 +143,57 @@ Status NGraphEncapsulateImpl::GetNgExecutable(
       TF_RETURN_IF_ERROR(Builder::TranslateGraph(input_shapes, static_input_map,
                                                  &m_graph, ng_function));
       ng_function->set_friendly_name(m_name);
+
+
+      // Bani
+      const auto& opset = ng::get_opset1();
+      ng::pass::Manager passes;
+      passes.register_pass<ng::pass::Opset1Upgrade>();
+      //passes.register_pass<ng::pass::ConstantFolding>();
+      passes.run_passes(ng_function);
+      for (const auto& node : ng_function->get_ops())
+      {
+          if (!opset.contains_op_type(node.get()))
+          {
+              if (node->get_type_info() == ng::op::GetOutputElement::type_info)
+              {
+                  // IE currently can handle GetOutuputElement op;
+                  continue;
+              }
+              else
+              {
+                  NGRAPH_VLOG(1) << "UNSUPPORTED OP DETECTED: " << node->get_type_info().name;
+                  return errors::Internal("Detected op not belonging to opset1!");
+              }
+          }
+      }
+
+      //ngraph::pass::ConstantFolding().run_on_function(ng_function);
+
+      // Bani - replace duplicate friendly_name with unique ones
+      std::unordered_set<std::string> friendly_names;
+      int counter = 1;
+      for (const auto& node : ng_function->get_ops())
+      {
+        std::string friendly = node->get_friendly_name();
+        //std::cout << "    DupCheck " << friendly << endl;
+        if(friendly_names.find (friendly) != friendly_names.end()) {
+          // duplicate
+          std::string actual = node->get_name();
+          friendly += "/" + counter++;
+          node->set_friendly_name(friendly);
+          std::cout << "    DupCheck match, new = " << friendly << endl;
+        }
+        friendly_names.insert(friendly);
+      }
+      std::cout << "\n    in Translation, After DupCheck friendly_name, ngfunc = " << ng_function->get_friendly_name() << ", output_size=" << ng_function->get_output_size() << " ==>>\n";
+      for (auto aNodeShPtr : ng_function->get_ordered_ops()) { std::cout << aNodeShPtr->get_name() << " (" << aNodeShPtr->get_friendly_name() << " / " << aNodeShPtr->get_type_name() << ")" << ", "; } std::cout << "\n";
+      sleep(0.1);
+
+
       int json_indentation = 4;
       serialized_ng_func = ngraph::serialize(ng_function, json_indentation);
+
     } else {
       auto itr = m_aot_functions.find(signature);
       if (itr == m_aot_functions.end()) {
@@ -202,6 +257,8 @@ Status NGraphEncapsulateImpl::GetNgExecutable(
                      << output_tensors_bytes_free / (1024 * 1024) << " MB";
     }  // cache eviction if cache size greater than cache depth
 
+
+
     NG_TRACE("Compile nGraph", m_name, "");
     BackendManager::LockBackend(m_op_backend_name);
     try {
@@ -218,6 +275,9 @@ Status NGraphEncapsulateImpl::GetNgExecutable(
         serialized_exec_read << (itr->second);
         ng_exec = op_backend->load(serialized_exec_read);
       } else {
+        NGRAPH_VLOG(1) << "Calling op_backend->compile(ng_function): " << "Cluster: " << m_name << ", ngfunc=" << ng_function->get_friendly_name() << ", output_size=" << ng_function->get_output_size() << " ==>>\n";
+        for (auto aNodeShPtr : ng_function->get_ordered_ops()) { std::cout << aNodeShPtr->get_name() << ","; } std::cout << "\n";
+        sleep(0.1);
         ng_exec = op_backend->compile(ng_function);
       }
     } catch (const std::exception& exp) {

@@ -5373,6 +5373,8 @@ Status Builder::TranslateGraph(
     TF_RETURN_IF_ERROR(GetInputNode(ng_op_map, n, 0, &result));
 
     ng_result_list[index] = result;
+
+    Builder::SetTracingInfo(n->name(), result); // Bani
   }
 
   //
