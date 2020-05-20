@@ -325,7 +325,7 @@ Status NGraphEncapsulateImpl::AllocateNGInputTensors(
         current_src_ptr, last_src_ptr, last_ng_tensor, false, ng_exec,
         op_backend, ng_element_type, ng_shape,
         m_executable_can_create_tensor ? inp_group_from_pipeline[i] : nullptr);
-    bool is_cpu = false; //m_op_backend_name == "CPU";
+    bool is_cpu = false;  // m_op_backend_name == "CPU";
 
     if (!is_cpu && current_ng_tensor->get_stale()) {
       // Fresh or stale, in case of CPU this step is never needed
@@ -427,7 +427,7 @@ std::shared_ptr<ng::runtime::Tensor> NGraphEncapsulateImpl::GetCurrentNgTensor(
   // values. ie, it will not reuse the same space if its rewritten it
   bool tf_tensor_has_changed = current_tf_ptr != last_tf_ptr;
   bool no_ng_tensor_found = last_ng_tensor == nullptr;
-  bool is_cpu = false; //m_op_backend_name == "CPU";
+  bool is_cpu = false;  // m_op_backend_name == "CPU";
 
   // We need to check last_ng_tensor != nullptr, since there are cases where
   // at the first call to the ng_exec, both current_dst_ptr (when the

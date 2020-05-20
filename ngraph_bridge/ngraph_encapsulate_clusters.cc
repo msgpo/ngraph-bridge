@@ -77,6 +77,8 @@ Status EncapsulateClusters(
     Graph* graph, int graph_id, FunctionDefLibrary* fdeflib,
     const std::unordered_map<std::string, std::string>& device_config,
     const AOTInfo& aot_info) {
+  cout << "EncapsulateClusters " << graph_id << endl;
+
   Encapsulator enc(graph);
   NGRAPH_VLOG(3) << "Running AnalysisPass in EncapsulateClusters";
   TF_RETURN_IF_ERROR(enc.AnalysisPass());

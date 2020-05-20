@@ -57,10 +57,14 @@ class NGraphRewritePass : public GraphOptimizationPass {
 
   static int s_serial_counter GUARDED_BY(s_serial_counter_mutex);
   static mutex s_serial_counter_mutex;
+
+  // static int s_rewrite GUARDED_BY(s_rewrite_mutex);
+  static mutex s_rewrite_mutex;
 };
 
 int NGraphRewritePass::s_serial_counter = 0;
 mutex NGraphRewritePass::s_serial_counter_mutex;
+mutex NGraphRewritePass::s_rewrite_mutex;
 
 //
 // Pass that rewrites the graph for nGraph operation.
@@ -86,6 +90,7 @@ mutex NGraphRewritePass::s_serial_counter_mutex;
 class NGraphEncapsulationPass : public NGraphRewritePass {
  public:
   Status Run(const GraphOptimizationPassOptions& options) override {
+    mutex_lock l(s_rewrite_mutex);
     // If we don't get a main graph, log that fact and bail.
     if (options.graph == nullptr) {
       NGRAPH_VLOG(0) << "NGraphEncapsulationPass: options.graph == nullptr";
@@ -147,12 +152,14 @@ class NGraphEncapsulationPass : public NGraphRewritePass {
       DumpGraphs(options, idx, "marked", "Graph Marked for Clustering");
     }
 
+    config::StopLoggingPlacement();
     // 2. Assign clusters then, if requested, dump the graphs.
     TF_RETURN_IF_ERROR(AssignClusters(options.graph->get()));
     if (DumpClusteredGraphs()) {
       DumpGraphs(options, idx, "clustered", "Graph with Clusters Assigned");
     }
 
+    config::StartLoggingPlacement();
     // 3. Deassign trivial clusters then, if requested, dump the graphs.
     TF_RETURN_IF_ERROR(DeassignClusters(options.graph->get()));
     if (DumpDeclusteredGraphs()) {
@@ -160,20 +167,27 @@ class NGraphEncapsulationPass : public NGraphRewritePass {
                  "Graph with Trivial Clusters De-Assigned");
     }
 
+    config::StopLoggingPlacement();
     // 4. Encapsulate clusters then, if requested, dump the graphs.
     FunctionDefLibrary* fdeflib_new = new FunctionDefLibrary();
     auto status = EncapsulateClusters(options.graph->get(), idx, fdeflib_new,
                                       config_map, {0, {}});
-    if (status != Status::OK()) {
-      delete (fdeflib_new);
-      return status;
-    }
-    // TODO: not using fdeflib_new in this path. Only grappler path uses it
-    delete (fdeflib_new);
     if (DumpEncapsulatedGraphs()) {
       DumpGraphs(options, idx, "encapsulated",
                  "Graph with Clusters Encapsulated");
     }
+    if (status != Status::OK()) {
+      cout << "found status not ok after enacap delete fdef " << idx << endl;
+      delete (fdeflib_new);
+      return status;
+    }
+    // TODO: not using fdeflib_new in this path. Only grappler path uses it
+    cout << "delete fdef outside " << idx << endl;
+    delete (fdeflib_new);
+    // if (DumpEncapsulatedGraphs()) {
+    //   DumpGraphs(options, idx, "encapsulated",
+    //              "Graph with Clusters Encapsulated");
+    // }
 
     // 5. Enter Prefetch Details in catalog then.
     // No point dumping graph here as there is no change to the graph
