@@ -123,6 +123,37 @@ TEST(MathOps, Add) {
   opexecuter.RunTest();
 }  // end of test op Add
 
+// Bani
+TEST(MathOps, Add0D1D) {
+  Scope root = Scope::NewRootScope();
+  Tensor A(DT_FLOAT, TensorShape({})); // scalar == rank 0 (no axes)
+  Tensor B(DT_FLOAT, TensorShape({5})); // vector == rank 1 (1 axis)
+  //Tensor C(DT_FLOAT, TensorShape({5,3})); // matrix == rank 2 (2 axis)
+  AssignInputValues(A, 2.1f);
+  AssignInputValues(B, 4.1f);
+  vector<int> static_input_indexes = {};
+  auto R = ops::Add(root, A, B);
+  vector<DataType> output_datatypes = {DT_FLOAT};
+  std::vector<Output> sess_run_fetchoutputs = {R};
+  OpExecuter opexecuter(root, "Add", static_input_indexes, output_datatypes, sess_run_fetchoutputs);
+  opexecuter.RunTest();
+}
+
+// Bani
+TEST(MathOps, Add1D2D) {
+  Scope root = Scope::NewRootScope();
+  Tensor A(DT_FLOAT, TensorShape({5})); // vector == rank 1 (1 axis)
+  Tensor B(DT_FLOAT, TensorShape({3,5})); // matrix == rank 2 (2 axis)
+  AssignInputValues(A, 2.1f);
+  AssignInputValues(B, 4.1f);
+  vector<int> static_input_indexes = {};
+  auto R = ops::Add(root, A, B);
+  vector<DataType> output_datatypes = {DT_FLOAT};
+  std::vector<Output> sess_run_fetchoutputs = {R};
+  OpExecuter opexecuter(root, "Add", static_input_indexes, output_datatypes, sess_run_fetchoutputs);
+  opexecuter.RunTest();
+}
+
 // Test op: AddV2
 TEST(MathOps, AddV2) {
   // Run a bunch of sub-test combinations to check shape broadcasting

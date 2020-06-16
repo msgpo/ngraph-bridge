@@ -455,6 +455,7 @@ def build_ngraph_tf(build_dir, artifacts_location, ngtf_src_loc, venv_dir,
     cmake_cmd = ["cmake"]
     cmake_cmd.extend(cmake_flags)
     cmake_cmd.extend([ngtf_src_loc])
+    print("cmake_cmd: ", *cmake_cmd)
     command_executor(cmake_cmd)
 
     import psutil

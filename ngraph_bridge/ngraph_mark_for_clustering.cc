@@ -61,6 +61,59 @@ static Status NGraphPlacementRequested(Node*, bool& placement_ok) {
   return Status::OK();
 }
 
+static Status CheckIfConstToResultNode(const Node* node,
+                                bool& skip_it) {
+  skip_it = false;
+
+#if 0
+  if(node->IsConstant()) {
+    // Get it's output/next node & check if that is a Result node
+    if(node->num_outputs() == 1) {
+      auto outNode = node->out_nodes().begin();
+      if(outNode->IsRetval()) {
+        skip_it = true;
+      }
+    }
+  }
+#endif
+
+  //for this node check the map, if there is a const for this op, then skip this node
+  auto TFtoNgraphOpMap = GetTFToNgOpMap();
+  auto ng_op = TFtoNgraphOpMap.find(node->type_string());
+  if (ng_op == TFtoNgraphOpMap.end()) {
+    return Status::OK();
+  }
+  // Loop through the ngraph op list to query, second --> std::set<shared_ptr<ng::Node>>
+  for (auto it = ng_op->second.begin(); it != ng_op->second.end(); it++) {
+    // Pass ngraph node to check if there is a Const op
+    if((*it)->is_constant()) {
+      skip_it = true;
+      std::cout << "Skipping Constant Yielding TF-NodeType: " << ng_op->first << " (" << node->name() << ")" << "\n";
+      return Status::OK();
+    }
+  }
+  
+
+#if 0
+  auto outputs = node->outputs(); // std::vector<Output<Node>>
+  if(outputs.size() == 1) {
+      auto const& outHndl = outputs[0];
+      auto const& targetInputHndls = outHndl.get_target_inputs(); // std::set<Input<Node>> get_target_inputs()
+      //std::cout << "        node's outHndl.get_target_inputs().size() = " << targetInputHndls.size() << "  ==>> "; for (auto x : targetInputHndls) { std::cout << x.get_node()->get_friendly_name() << " (" << x.get_node()->get_name() << " / " << x.get_node()->get_type_name() << "), "; } std::cout << "\n";
+      // TODO: put a check: if we get size > 1, it's Ok as long as all the target inputs have same friendly_name (but diff actual name)
+      if(targetInputHndls.size() > 0) {
+          auto const& outNode = targetInputHndls.begin()->get_node();
+          //std::cout << "        node's outputs.size() == ?, fn(name) = " << outNode->get_friendly_name() << "(" << outNode->get_name() << ", " << outNode->get_type_name() << ")\n";
+          if(outNode->is_output()) {
+              skip_it = true;
+          }
+      }
+  }
+#endif
+
+  return Status::OK();
+}
+
 static Status CheckIfOutputNode(const Node* node,
                                 const std::set<string> skip_these_nodes,
                                 bool& skip_it) {
@@ -710,7 +763,8 @@ GetTFToNgOpMap() {
   // implemented or a new Ngraph Op has been added
   static std::map<std::string, std::set<shared_ptr<ng::Node>>> TFtoNgraphOpMap {
     {"Abs", {std::make_shared<ngraph::op::Abs>()}},
-        {"Add", {std::make_shared<ngraph::op::Add>()}},
+        {"Add", {std::make_shared<ngraph::op::Add>(),
+          std::make_shared<ngraph::op::Broadcast>(), constant}},
         {"AddN", {std::make_shared<ngraph::op::Add>()}},
         {"AddV2",
          {std::make_shared<ngraph::op::Add>(),
@@ -1194,6 +1248,17 @@ Status MarkForClustering(Graph* graph, const std::set<string> skip_these_nodes,
                        << " - skip marking it for clustering";
         break;
       }
+
+      #if 0
+      // check if a Const_XXX node is directly connected to a _Result node
+      skip_it = false;
+      TF_RETURN_IF_ERROR(CheckIfConstToResultNode(node, skip_it));
+      if (skip_it) {
+        NGRAPH_VLOG(5) << "NGTF_OPTIMIZER: Found Const->Result Node: " << node->name()
+                       << " - skip marking it for clustering";
+        break;
+      }
+      #endif
 
       // check placement
       bool placement_ok = false;
