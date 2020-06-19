@@ -47,6 +47,11 @@
 #include "ngraph_bridge/ngraph_utils.h"
 #include "ngraph_bridge/version.h"
 
+#include "ngraph/op/get_output_element.hpp"
+#include "ngraph/opsets/opset.hpp"
+#include "ngraph/pass/manager.hpp"
+#include "ngraph/pass/opset1_upgrade.hpp"
+
 using namespace std;
 
 namespace tensorflow {
@@ -1019,6 +1024,32 @@ Status PerformTranslation(Node* node, const std::map<std::string, vector<int>>&
   TF_RETURN_IF_ERROR(Builder::TranslateGraph(input_shapes, static_input_map,
                                              &graph_for_current_encapsulate,
                                              ng_function));
+
+  // Bani
+  const auto& opset = ng::get_opset1();
+  ng::pass::Manager passes;
+  passes.register_pass<ng::pass::Opset1Upgrade>();
+  passes.run_passes(ng_function);
+  for (const auto& node : ng_function->get_ops())
+  {
+      if (!opset.contains_op_type(node.get()))
+      {
+          if (node->get_type_info() == ng::op::GetOutputElement::type_info)
+          {
+              // IE currently can handle GetOutuputElement op;
+              continue;
+          }
+          else
+          {
+              NGRAPH_VLOG(1) << "UNSUPPORTED OP DETECTED: " << node->get_type_info().name;
+              return errors::Internal("Detected op not belonging to opset1!");
+          }
+      }
+  }
+  // BANI_DBG: 
+  std::cout << "Perform Opset1Upgrade After Translation, friendly_name, ngfunc = " << ng_function->get_friendly_name() << ", output_size=" << ng_function->get_output_size() << " ==>>\n";
+  for (auto aNodeShPtr : ng_function->get_ordered_ops()) { std::cout << aNodeShPtr->get_name() << " (" << aNodeShPtr->get_friendly_name() << ")" << ", "; } std::cout << "\n";
+
 
   return Status::OK();
 }

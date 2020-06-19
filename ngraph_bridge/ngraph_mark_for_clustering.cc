@@ -88,7 +88,7 @@ static Status CheckIfConstToResultNode(const Node* node,
     // Pass ngraph node to check if there is a Const op
     if((*it)->is_constant()) {
       skip_it = true;
-      std::cout << "Skipping Constant Yielding TF-NodeType: " << ng_op->first << " (" << node->name() << ")" << "\n";
+      //BANI_DBG std::cout << "Skipping Constant Yielding TF-NodeType: " << ng_op->first << " (" << node->name() << ")" << "\n";
       return Status::OK();
     }
   }
@@ -281,7 +281,7 @@ const std::map<std::string, SetAttributesFunction>& GetAttributeSetters() {
     };
     // set_attributes_map["RandomUniform"] = SetStaticInputs({0});
     set_attributes_map["Reshape"] = SetStaticInputs({1});
-    set_attributes_map["ResizeBilinear"] = SetStaticInputs({1});
+    // Vishakha's model: set_attributes_map["ResizeBilinear"] = SetStaticInputs({1});
     set_attributes_map["ScatterNd"] = SetStaticInputs({2});
     set_attributes_map["Slice"] = SetStaticInputs({1, 2});
     set_attributes_map["Split"] = SetStaticInputs({0});
@@ -472,7 +472,7 @@ const std::map<std::string, ConfirmationFunction>& GetConfirmationMap() {
     confirmation_function_map["Relu6"] = SimpleConfirmationFunction();
     confirmation_function_map["ReluGrad"] = SimpleConfirmationFunction();
     confirmation_function_map["Reshape"] = SimpleConfirmationFunction();
-    confirmation_function_map["ResizeBilinear"] = SimpleConfirmationFunction();
+    // Vishakha's model: confirmation_function_map["ResizeBilinear"] = SimpleConfirmationFunction();
     confirmation_function_map["Rsqrt"] = SimpleConfirmationFunction();
     confirmation_function_map["RsqrtGrad"] = SimpleConfirmationFunction();
     confirmation_function_map["ScatterNd"] = SimpleConfirmationFunction();
@@ -687,7 +687,7 @@ const TypeConstraintMap& GetTypeConstraintMap() {
     type_constraint_map["ReluGrad"]["T"] = NGraphNumericDTypes();
     type_constraint_map["Reshape"]["T"] = NGraphDTypes();
     type_constraint_map["Reshape"]["Tshape"] = NGraphIndexDTypes();
-    type_constraint_map["ResizeBilinear"]["T"] = NGraphNumericDTypes();
+    // Vishakha's model: type_constraint_map["ResizeBilinear"]["T"] = NGraphNumericDTypes();
     type_constraint_map["Rsqrt"]["T"] = NGraphDTypes();
     type_constraint_map["RsqrtGrad"]["T"] = NGraphRealDTypes();
     type_constraint_map["ScatterNd"]["T"] = NGraphDTypes();
@@ -1044,9 +1044,10 @@ GetTFToNgOpMap() {
           std::make_shared<ngraph::op::Relu>()}},
         {"ReluGrad", {relu}},
         // TODO: remove Convert later
-        {"ResizeBilinear",
-         {std::make_shared<ngraph::op::Convert>(),
-          std::make_shared<ngraph::op::Interpolate>()}},
+        // Vishakha's model: 
+        // {"ResizeBilinear",
+        //  {std::make_shared<ngraph::op::Convert>(),
+        //   std::make_shared<ngraph::op::Interpolate>()}},
         {"Rsqrt", {constant, std::make_shared<ngraph::op::Power>()}},
         {"RsqrtGrad",
          {constant, std::make_shared<ngraph::op::Power>(),

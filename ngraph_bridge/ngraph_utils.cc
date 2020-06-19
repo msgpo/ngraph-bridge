@@ -382,16 +382,17 @@ Status CheckAxisDimInRange(std::vector<int64> axes, size_t rank) {
   return Status::OK();
 }
 
+#if (CMAKE_BUILD_TYPE == Debug)
 // GDB Debug utility
-void print_ngfunc_nodes(const shared_ptr<ngraph::Function>& func) {
-  print_ngfunc_nodes(*func);
+void gdb_print_ngfunc_nodes_shptr(const shared_ptr<ngraph::Function>& func) {
+  gdb_print_ngfunc_nodes_funcref(*func);
 }
 
-void print_ngfunc_nodes(void* func_addr) {
-  print_ngfunc_nodes(*((ngraph::Function*)func_addr));
+void gdb_print_ngfunc_nodes_vptr(void* func_addr) {
+  gdb_print_ngfunc_nodes_funcref(*((ngraph::Function*)func_addr));
 }
 
-void print_ngfunc_nodes(const ngraph::Function& func) {
+void gdb_print_ngfunc_nodes_funcref(const ngraph::Function& func) {
     std::cout << "The ngfunc nodes for " << func.get_friendly_name() << 
     ", #results=" << func.get_results().size() << ", #params=" << func.get_parameters().size() << 
     ", #ops=" << func.get_ops().size() << " ==>>\n";
@@ -427,10 +428,11 @@ void print_ngfunc_nodes(const ngraph::Function& func) {
     std::cout << "m_map_result_to_ngnode ==> "; for (auto const& pair : m_map_result_to_ngnode) { std::cout << pair.first << "->" << pair.second << ", "; } std::cout << "\n";
 }
 
-Status NgraphSerialize(const char* file_name,
+Status gdb_serialize_ngfunc(const char* file_name,
                        const std::shared_ptr<ngraph::Function>& ng_function) {
   return NgraphSerialize(std::string(file_name), ng_function);          
 }
+#endif
 
 Status NgraphSerialize(const std::string& file_name,
                        const std::shared_ptr<ngraph::Function>& ng_function) {

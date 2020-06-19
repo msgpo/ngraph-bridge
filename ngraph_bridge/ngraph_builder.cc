@@ -5205,7 +5205,7 @@ const static std::map<
       {"Reciprocal", TranslateReciprocalOp},
       {"Relu", TranslateUnaryOp<ngraph::op::Relu>}, {"Relu6", TranslateRelu6Op},
       {"ReluGrad", TranslateReluGradOp}, {"Reshape", TranslateReshapeOp},
-      {"ResizeBilinear", TranslateResizeBilinearOp},
+      // Vishakha's model: {"ResizeBilinear", TranslateResizeBilinearOp}, // Interpolate -> Interp issue, dldt_dev/inference-engine/src/transformations/include/ngraph_ops/interp.hpp
       {"Rsqrt", TranslateRsqrtOp}, {"RsqrtGrad", TranslateRsqrtGradOp},
       {"ScatterNd", TranslateScatterNdOp}, {"Select", TranslateSelectOp},
       {"Shape", TranslateShapeOp}, {"Sigmoid", TranslateSigmoidOp},
@@ -5378,6 +5378,13 @@ Status Builder::TranslateGraph(
   //
   // Create the nGraph function.
   //
+  // BANI_DBG:
+  std::cout << "Builder TranslateGraph END, ng_result_list " << ng_result_list.size() << " => ";
+  for(const auto& n : ng_result_list) {
+    std::cout << n->get_friendly_name() << " / " << n->get_name() << " / " << n->get_output_element_type(0) << ",    ";
+  }
+  std::cout << "\n";
+
   ng_function = make_shared<ng::Function>(ng_result_list, ng_parameter_list);
 
 #if defined NGRAPH_DISTRIBUTED

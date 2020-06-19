@@ -669,10 +669,14 @@ void NGraphEncapsulateOp::ComputeUsingLegacyExecutor(OpKernelContext* ctx) {
   std::vector<std::pair<void*, shared_ptr<ng::runtime::Tensor>>> output_caches;
   {
     NG_TRACE("Output: maybe create", name(), "");
+    // Bani
+    NGRAPH_VLOG(6) << "Output: maybe create" << name();
     for (auto i = 0; i < ng_exec->get_results().size(); i++) {
       auto ng_element = ng_exec->get_results()[i];
       auto ng_shape = ng_element->get_shape();
       auto ng_element_type = ng_element->get_element_type();
+      NGRAPH_VLOG(6) << "  ng_element=" << ng_element->get_name() << ", fn=" << ng_element->get_friendly_name() << 
+        ", ng_element_type=" << ng_element_type << ", ng_shape=" << ng::shape_size<ng::Shape>(ng_shape); // BANI_DBG
 
       // Create the TF output tensor
       vector<int64> dims;
