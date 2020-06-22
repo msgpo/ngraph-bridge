@@ -44,6 +44,20 @@
 #include "ngraph_bridge/ngraph_timer.h"
 #include "ngraph_bridge/ngraph_utils.h"
 
+#include "ngraph/op/get_output_element.hpp"
+#include "ngraph/opsets/opset.hpp"
+#include "ngraph/pass/manager.hpp"
+#include "ngraph/pass/algebraic_simplification.hpp"
+#include "ngraph/pass/get_output_element_elimination.hpp"
+#include "ngraph/pass/like_replacement.hpp"
+#include "ngraph/pass/manager.hpp"
+#include "ngraph/pass/nop_elimination.hpp"
+#include "ngraph/pass/opset1_upgrade.hpp"
+#include "ngraph/pass/constant_folding.hpp"
+#include "ngraph/pass/reshape_elimination.hpp"
+#include "ngraph/pass/reshape_sinking.hpp"
+#include "ngraph/pass/zero_dim_tensor_elimination.hpp"
+
 #include "ngraph_bridge/ngraph_var.h"
 #if defined(NGRAPH_TF_ENABLE_VARIABLES_AND_OPTIMIZERS)
 #include "ngraph_bridge/ngraph_catalog.h"
@@ -137,8 +151,49 @@ Status NGraphEncapsulateImpl::GetNgExecutable(
       TF_RETURN_IF_ERROR(Builder::TranslateGraph(input_shapes, static_input_map,
                                                  &m_graph, ng_function));
       ng_function->set_friendly_name(m_name);
-      int json_indentation = 4;
-      serialized_ng_func = ngraph::serialize(ng_function, json_indentation);
+
+
+      // Bani
+      const auto& opset = ng::get_opset1();
+      ng::pass::Manager passes;
+      // passes.register_pass<ng::pass::LikeReplacement>();
+      // passes.register_pass<ng::pass::NopElimination>();
+      // passes.register_pass<ng::pass::ZeroDimTensorElimination>();
+      // passes.register_pass<ng::pass::AlgebraicSimplification>();
+      // passes.register_pass<ng::pass::ReshapeSinking>();
+      // passes.register_pass<ng::pass::ReshapeElimination>();
+      // passes.register_pass<ng::pass::RecurrentReshapeElimination>();
+      // passes.register_pass<ng::pass::GetOutputElementElimination>();
+      passes.register_pass<ng::pass::Opset1Upgrade>();
+      passes.register_pass<ng::pass::ConstantFolding>();
+      //passes.register_pass<ng::pass::ReshapeSinking>();
+      //passes.register_pass<ng::pass::AlgebraicSimplification>();
+      passes.run_passes(ng_function);
+      for (const auto& node : ng_function->get_ops())
+      {
+          if (!opset.contains_op_type(node.get()))
+          {
+              if (node->get_type_info() == ng::op::GetOutputElement::type_info)
+              {
+                  // IE currently can handle GetOutuputElement op;
+                  continue;
+              }
+              else
+              {
+                  NGRAPH_VLOG(1) << "UNSUPPORTED OP DETECTED: " << node->get_type_info().name;
+                  return errors::Internal("Detected op not belonging to opset1!");
+              }
+          }
+      }
+      // BANI_DBG: 
+      std::cout << "Performed Opset1Upgrade + Passes After Translation, friendly_name, ngfunc = " << ng_function->get_friendly_name() << ", output_size=" << ng_function->get_output_size() << " ==>>\n";
+      for (auto aNodeShPtr : ng_function->get_ordered_ops()) { std::cout << aNodeShPtr->get_name() << " (" << aNodeShPtr->get_friendly_name() << ")" << ", "; } std::cout << "\n";
+
+
+      if (std::getenv("NGRAPH_ENABLE_SERIALIZE") != nullptr) {
+        int json_indentation = 4;
+        serialized_ng_func = ngraph::serialize(ng_function, json_indentation);
+      }
     } else {
       auto itr = m_aot_functions.find(signature);
       if (itr == m_aot_functions.end()) {
@@ -218,6 +273,7 @@ Status NGraphEncapsulateImpl::GetNgExecutable(
         serialized_exec_read << (itr->second);
         ng_exec = op_backend->load(serialized_exec_read);
       } else {
+        NGRAPH_VLOG(1) << "Crating ng_exec from op_backend->compile(ng_function) " << m_name;
         ng_exec = op_backend->compile(ng_function);
       }
     } catch (const std::exception& exp) {
