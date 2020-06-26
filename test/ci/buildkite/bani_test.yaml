@@ -1,0 +1,26 @@
+steps:
+  - command: |
+      buildkite-agent meta-data set "BUILDKITE_INIT_AGENT" "$BUILDKITE_AGENT_NAME"
+      echo BUILDKITE_BUILD_ID is $BUILDKITE_BUILD_ID
+      sleep 3
+
+    label: ":gear: Setup"
+    timeout_in_minutes: 30
+    agents:
+    - "queue=cpu"
+    parallelism: 1
+
+  - wait
+
+  - command: |
+      export PATH=/opt/llvm-3.9.0/bin/:$$PATH 
+      echo Second step
+      BUILDKITE_INIT_AGENT=$(buildkite-agent meta-data get "BUILDKITE_INIT_AGENT")
+      echo First step was run on $BUILDKITE_INIT_AGENT
+      sleep 3
+      
+    label: ":pencil: Code Format ?"
+    timeout_in_minutes: 30
+    agents:
+    - "queue=cpu"
+    parallelism: 1
