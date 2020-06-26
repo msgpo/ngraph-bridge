@@ -1,3 +1,4 @@
+name=$(buildkite-agent meta-data get name)
 steps:
   - command: |
       buildkite-agent meta-data set "BUILDKITE_INIT_AGENT" "$BUILDKITE_AGENT_NAME"
@@ -7,7 +8,7 @@ steps:
     label: ":gear: Setup"
     timeout_in_minutes: 30
     agents:
-    - "queue=cpu"
+      name: "$name"
     parallelism: 1
 
   - wait
@@ -22,5 +23,5 @@ steps:
     label: ":pencil: Code Format ?"
     timeout_in_minutes: 30
     agents:
-    - "queue=cpu"
+      name: "$name"
     parallelism: 1
