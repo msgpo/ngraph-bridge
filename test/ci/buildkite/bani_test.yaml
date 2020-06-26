@@ -3,7 +3,7 @@ steps:
       rm -rf /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID
       virtualenv -p /usr/bin/python3 /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID/venv 
       source /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID/venv/bin/activate 
-      pip install -U yapf==0.26.0
+      pip install -U yapf
       buildkite-agent annotate 'Initial setup completed' --style 'success' --context 'ctx-success'
       
       export PATH=/opt/llvm-3.9.0/bin/:$PATH
