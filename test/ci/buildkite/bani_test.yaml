@@ -1,29 +1,52 @@
 steps:
   - command: |
-      echo Step 1
-      #buildkite-agent meta-data set "BUILDKITE_INIT_AGENT" "$BUILDKITE_AGENT_NAME"
-      #echo BUILDKITE_BUILD_ID is $BUILDKITE_BUILD_ID
-      sleep 3
-      echo Step 1 done
-
-    label: ":gear: Setup"
-    timeout_in_minutes: 30
-    agents:
-      name: "$name"
-    parallelism: 1
-
-  - wait
-
-  - command: |
-      export PATH=/opt/llvm-3.9.0/bin/:$$PATH 
-      echo Second step
-      #BUILDKITE_INIT_AGENT=$(buildkite-agent meta-data get "BUILDKITE_INIT_AGENT")
-      #echo First step was run on $BUILDKITE_INIT_AGENT
-      sleep 3
-      echo Second step done
+      rm -rf /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID
+      virtualenv -p /usr/bin/python3 /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID/venv 
+      source /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID/venv/bin/activate 
+      pip install -U yapf==0.26.0
+      buildkite-agent annotate 'Initial setup completed' --style 'success' --context 'ctx-success'
       
-    label: ":pencil: Code Format ?"
-    timeout_in_minutes: 30
+      export PATH=/opt/llvm-3.9.0/bin/:$PATH
+      maint/check-code-format.sh
+      buildkite-agent annotate 'Starting Build...' --style 'info' --context 'ctx-info'
+      python3 build_ngtf.py --artifacts /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID \
+      --use_tensorflow_from_location /localdisk/buildkite-agent/prebuilt_tensorflow_1_15_2
+      buildkite-agent annotate 'Build completed' --style 'success' --context 'ctx-success'
+      
+      buildkite-agent annotate 'Starting C++ Unit Test...' --style 'info' --context 'ctx-info'
+      PYTHONPATH=`pwd` python3 test/ci/buildkite/test_runner.py \
+        --artifacts /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID --test_cpp
+      buildkite-agent annotate 'C++ Unit Test completed' --style 'success' --context 'ctx-success'
+      
+      buildkite-agent annotate 'Installing...' --style 'info' --context 'ctx-info'
+      pip install psutil && pip install -U \
+        /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID/tensorflow/tensorflow-1.15.2-cp36-cp36m-linux_x86_64.whl
+      pip install -U pip==19.3.1
+      pip install -U /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID/ngraph_tensorflow_bridge-*.whl
+      buildkite-agent annotate 'pip install completed' --style 'success' --context 'ctx-success'
+      
+      buildkite-agent annotate 'Starting nGraph Pytest...' --style 'info' --context 'ctx-info'
+      pip install pytest
+      pip install keras==2.3.1
+      PYTHONPATH=`pwd`:`pwd`/tools:`pwd`/examples:`pwd`/examples/mnist python3 test/ci/buildkite/test_runner.py \
+        --artifacts /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID --test_python
+      buildkite-agent annotate 'nGraph Pytest completed' --style 'success' --context 'ctx-success'
+      
+      buildkite-agent annotate 'Starting TensorFlow Pytest...' --style 'info' --context 'ctx-info'
+      PYTHONPATH=`pwd` python3 test/ci/buildkite/test_runner.py \
+        --artifacts /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID --test_tf_python
+      buildkite-agent annotate 'TensorFlow Pytest completed' --style 'success' --context 'ctx-success'
+      
+      buildkite-agent annotate 'Running RestNet50...' --style 'info' --context 'ctx-info'
+      PYTHONPATH=`pwd` python3 test/ci/buildkite/test_runner.py \
+        --artifacts /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID --test_resnet
+      buildkite-agent annotate 'RestNet50 test completed' --style 'success' --context 'ctx-success'
+      
+      rm -rf /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID
+      
+    label: ":hammer_and_wrench: Build steps"
+    timeout_in_minutes: 90
     agents:
-      name: "$name"
+    - "queue=cpu"
     parallelism: 1
+
