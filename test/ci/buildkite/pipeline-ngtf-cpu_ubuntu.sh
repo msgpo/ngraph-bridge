@@ -37,6 +37,7 @@ steps:
     timeout_in_minutes: 30
     agents:
       name: "$name"
+      queue: cpu
 
   - wait
 
@@ -49,6 +50,7 @@ steps:
     timeout_in_minutes: 30
     agents:
       name: "$name"
+      queue: cpu
 
   - wait
 
@@ -61,6 +63,7 @@ steps:
     timeout_in_minutes: 60
     agents:
       name: "$name"
+      queue: cpu
 
   - wait
 
@@ -72,6 +75,7 @@ steps:
     timeout_in_minutes: 30
     agents:
       name: "$name"
+      queue: cpu
 
   - wait 
 
@@ -86,6 +90,7 @@ steps:
     timeout_in_minutes: 30
     agents:
       name: "$name"
+      queue: cpu
 
   - wait
   - command: |
@@ -99,6 +104,7 @@ steps:
     timeout_in_minutes: 30
     agents:
       name: "$name"
+      queue: cpu
 
   - wait
   - command: |
@@ -111,6 +117,7 @@ steps:
     timeout_in_minutes: 60
     agents:
       name: "$name"
+      queue: cpu
 
   - wait
 
@@ -122,6 +129,7 @@ steps:
     timeout_in_minutes: 30
     agents:
       name: "$name"
+      queue: cpu
 
   - wait: ~
 
@@ -130,5 +138,6 @@ steps:
     label: ":wastebasket: Cleanup"
     agents:
       name: "$name"
+      queue: cpu
 
 EOF
