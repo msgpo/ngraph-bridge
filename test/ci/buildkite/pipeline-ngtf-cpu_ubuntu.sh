@@ -18,7 +18,7 @@
 #
 
 #name=$(buildkite-agent meta-data get name)
-name = $BUILDKITE_AGENT_NAME
+name=$BUILDKITE_AGENT_NAME
 if [ "x$name" == "x" ]; then
   echo "Cannot determine agent name. Stop." 1>&2
   exit 1
