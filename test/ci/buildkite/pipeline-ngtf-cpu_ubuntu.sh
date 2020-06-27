@@ -43,7 +43,7 @@ steps:
 
   - command: |
       source /localdisk/buildkite/artifacts/$BUILDKITE_BUILD_ID/venv/bin/activate 
-      export PATH=/opt/llvm-3.9.0/bin/:$$PATH 
+      export PATH=/opt/llvm-3.9.0/bin/:\$PATH 
       maint/check-code-format.sh
       
     label: ":pencil: Code Format ?"
