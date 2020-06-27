@@ -56,8 +56,22 @@ def command_executor(cmd, verbose=False, msg=None, stdout=None, stderr=None):
     if verbose:
         tag = 'Running COMMAND: ' if msg is None else msg
         print(tag + cmd)
-    if (call(shlex.split(cmd), stdout=stdout, stderr=stderr) != 0):
-        raise Exception("Error running command: " + cmd)
+    cmd_list = shlex.split(cmd)
+    try:
+        retcode = subprocess.call(cmd_list, stderr=subprocess.STDOUT)
+        if retcode < 0:
+            print("Child was terminated by signal", -retcode, file=sys.stderr)
+            exit(retcode)
+        elif retcode == 0:
+            print("Child returned OK", retcode, file=sys.stderr)
+            # OK, continue
+        else:
+            print("Child returned ERROR", retcode, file=sys.stderr)
+            exit(retcode)
+    except OSError as e:
+        print("!!! Execution failed !!!", e, file=sys.stderr)
+        #exit 1 # exit program with error
+        raise
 
 
 def build_ngraph(build_dir, src_location, cmake_flags, verbose):
