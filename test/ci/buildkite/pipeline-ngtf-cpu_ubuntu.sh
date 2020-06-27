@@ -20,10 +20,10 @@
 #name=$(buildkite-agent meta-data get name)
 name = $BUILDKITE_AGENT_NAME
 if [ "x$name" == "x" ]; then
-  echo "Cannot determine agent name. Stop."
+  echo "Cannot determine agent name. Stop." 1>&2
   exit 1
 fi
-echo "Will pin all steps in this current agent $name ..."
+echo "Will pin all steps in this current agent $name ..." 1>&2
 
 cat << EOF
 steps:
