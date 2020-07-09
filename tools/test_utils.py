@@ -736,10 +736,10 @@ def run_simple_resnet50_infer_from_artifacts(ngraph_tf_src_dir, artifact_dir,
 
 def run_resnet50_infer_from_artifacts(ngraph_tf_src_dir, artifact_dir,
                                       batch_size, iterations):
-    #run_intelaimodels_resnet50_infer_from_artifacts(
-    #    ngraph_tf_src_dir, artifact_dir, batch_size, iterations)
-    run_simple_resnet50_infer_from_artifacts(ngraph_tf_src_dir, artifact_dir,
-                                             batch_size, iterations)
+    run_intelaimodels_resnet50_infer_from_artifacts(
+        ngraph_tf_src_dir, artifact_dir, batch_size, iterations)
+    #run_simple_resnet50_infer_from_artifacts(ngraph_tf_src_dir, artifact_dir,
+    #                                         batch_size, iterations)
 
 
 def run_cpp_example_test(build_dir):

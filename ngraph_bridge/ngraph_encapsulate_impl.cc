@@ -40,6 +40,8 @@
 #include "ngraph_bridge/ngraph_timer.h"
 #include "ngraph_bridge/ngraph_utils.h"
 
+#include "ngraph/opsets/opset.hpp"
+
 using namespace std;
 namespace ng = ngraph;
 
@@ -167,6 +169,28 @@ Status NGraphEncapsulateImpl::GetNgExecutable(
       ng_function->set_friendly_name(m_name);
       int json_indentation = 4;
       serialized_ng_func = ngraph::serialize(ng_function, json_indentation);
+
+      // Check if all NG-Ops are Opset3
+      std::cout << "Checking Opset3 compliance...\n";
+      const auto& opset = ng::get_opset3();
+      for (const auto& node : ng_function->get_ops())
+      {
+          if (!opset.contains_op_type(node.get()))
+          {
+              if (node->get_type_info() == ng::op::GetOutputElement::type_info)
+              {
+                  // OPV-IE currently can handle GetOutuputElement op;
+                  std::cout << node->get_name() << ", OPSET3 GetOutuputElement: " << node->get_type_info().name << "\n";
+              }
+              else
+              {
+                  std::cout << node->get_name() << ", OPSET3 UNSUPPORTED OP DETECTED: " << node->get_type_info().name << "\n";
+                  //THROW_IE_EXCEPTION << "Detected op not belonging to opset1!";
+              }
+          }
+      }
+
+
     } else {
       auto itr = m_aot_functions.find(signature);
       if (itr == m_aot_functions.end()) {
