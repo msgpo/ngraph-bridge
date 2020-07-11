@@ -1,5 +1,5 @@
-env:
-  NGRAPH_TF_BACKEND: ${NGRAPH_TF_BACKEND:-CPU}
+# env:
+#   NGRAPH_TF_BACKEND: ${NGRAPH_TF_BACKEND:-CPU}
 
 steps:
   - command: |
