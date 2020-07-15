@@ -675,7 +675,9 @@ void NGraphEncapsulateOp::ComputeUsingLegacyExecutor(OpKernelContext* ctx) {
       auto ng_element = ng_exec->get_results()[i];
       auto ng_shape = ng_element->get_shape();
       auto ng_element_type = ng_element->get_element_type();
-      NGRAPH_VLOG(6) << "  ng_element=" << ng_element->get_name() << ", fn=" << ng_element->get_friendly_name() << 
+      // BANI_DBG
+      NGRAPH_VLOG(6) << "  ng_element fn=" << ng_element->get_friendly_name() << 
+        " <- " << ng_element->input(0).get_source_output().get_node()->get_friendly_name() <<
         ", ng_element_type=" << ng_element_type << ", ng_shape=" << ng::shape_size<ng::Shape>(ng_shape); // BANI_DBG
 
       // Create the TF output tensor

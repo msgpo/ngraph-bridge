@@ -153,6 +153,7 @@ Status NGraphEncapsulateImpl::GetNgExecutable(
       ng_function->set_friendly_name(m_name);
 
 
+#if 0
       // Bani
       const auto& opset = ng::get_opset1();
       ng::pass::Manager passes;
@@ -188,7 +189,7 @@ Status NGraphEncapsulateImpl::GetNgExecutable(
       // BANI_DBG: 
       std::cout << "Performed Opset1Upgrade + Passes After Translation, friendly_name, ngfunc = " << ng_function->get_friendly_name() << ", output_size=" << ng_function->get_output_size() << " ==>>\n";
       for (auto aNodeShPtr : ng_function->get_ordered_ops()) { std::cout << aNodeShPtr->get_name() << " (" << aNodeShPtr->get_friendly_name() << ")" << ", "; } std::cout << "\n";
-
+#endif
 
       if (std::getenv("NGRAPH_ENABLE_SERIALIZE") != nullptr) {
         int json_indentation = 4;
@@ -273,7 +274,7 @@ Status NGraphEncapsulateImpl::GetNgExecutable(
         serialized_exec_read << (itr->second);
         ng_exec = op_backend->load(serialized_exec_read);
       } else {
-        NGRAPH_VLOG(1) << "Crating ng_exec from op_backend->compile(ng_function) " << m_name;
+        NGRAPH_VLOG(1) << "Creating ng_exec from op_backend->compile(ng_function) " << m_name << " ...";
         ng_exec = op_backend->compile(ng_function);
       }
     } catch (const std::exception& exp) {
