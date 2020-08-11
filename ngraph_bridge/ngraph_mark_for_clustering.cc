@@ -927,7 +927,7 @@ GetTFToNgOpMap() {
         std::make_shared<ngraph::opset3::Log>(),
         std::make_shared<ngraph::opset3::Add>()}},
       {"SpaceToDepth", {std::make_shared<ngraph::opset3::SpaceToDepth>()}},
-      {"Split", {std::make_shared<ngraph::op::Slice>()}},
+      {"Split", {std::make_shared<ngraph::opset3::Split>(), constant}},
       {"SplitV", {std::make_shared<ngraph::op::Slice>()}},
       {"Sqrt", {std::make_shared<ngraph::opset3::Sqrt>()}},
       {"Square", {std::make_shared<ngraph::opset3::Multiply>()}},
