@@ -3202,31 +3202,35 @@ static Status TranslateSplitOp(
   int32 num_split;
   TF_RETURN_IF_ERROR(GetNodeAttr(op->attrs(), "num_split", &num_split));
 
-  ng::Shape shape = ng_input->get_shape();
-  int rank = shape.size();
-  std::vector<size_t> lower;
-  std::vector<size_t> upper;
-  for (int i = 0; i < rank; ++i) {
-    lower.push_back(0);
-    upper.push_back(shape[i]);
-  }
+  // ng::Shape shape = ng_input->get_shape();
+  // int rank = shape.size();
+  // std::vector<size_t> lower;
+  // std::vector<size_t> upper;
+  // for (int i = 0; i < rank; ++i) {
+  //   lower.push_back(0);
+  //   upper.push_back(shape[i]);
+  // }
   std::vector<int> split_dim_vec;
   TF_RETURN_IF_ERROR(
       GetStaticInputVector(op, 0, static_input_map, &split_dim_vec));
-  int split_dim = split_dim_vec[0] + (split_dim_vec[0] < 0 ? (int64)rank : 0);
+  auto ng_split_dim = ConstructNgNode<ng::opset3::Constant>(
+      op->name(), ng::element::u64, ng::Shape{split_dim_vec.size()}, split_dim_vec);
+  // int split_dim = split_dim_vec[0] + (split_dim_vec[0] < 0 ? (int64)rank : 0);
 
-  int size = shape[split_dim] / num_split;
-  int cursor = 0;
+  // int size = shape[split_dim] / num_split;
+  // int cursor = 0;
 
-  for (int i = 0; i < num_split; ++i) {
-    lower[split_dim] = cursor;
-    cursor += size;
-    upper[split_dim] = cursor;
+  // for (int i = 0; i < num_split; ++i) {
+  //   lower[split_dim] = cursor;
+  //   cursor += size;
+  //   upper[split_dim] = cursor;
 
-    std::string output_name = op->name();
-    SaveNgOp(ng_op_map, op->name(), ConstructNgNode<ng::op::Slice>(
-                                        op->name(), ng_input, lower, upper));
-  }
+  //   std::string output_name = op->name();
+  //   SaveNgOp(ng_op_map, op->name(), ConstructNgNode<ng::op::Slice>(
+  //                                       op->name(), ng_input, lower, upper));
+  // }
+    SaveNgOp(ng_op_map, op->name(), ConstructNgNode<ng::opset3::Split>(
+                                        op->name(), ng_input, ng_split_dim, num_split));
   return Status::OK();
 }
 
